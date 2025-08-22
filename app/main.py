@@ -1,7 +1,31 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from typing import Annotated 
+from db import engine, SessionLocal, Base
+from sqlalchemy.orm import Session
+from routers import routes
+# from contextlib import asynccontextmanager
+# from . import db, models
+
+
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     async with db.engine.begin() as conn:
+#         await conn.run_sync(db.Base.metadata.create_all())
 
 app = FastAPI()
+app.include_router(routes.router)
+
+Base.metadata.create_all(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+db_dependency = Annotated[Session, Depends(get_db)] # Session for database
 
 @app.get("/")
-def root():
+async def root() -> dict[str, str]:
     return {"Hello": "World"}
