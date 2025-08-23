@@ -17,10 +17,9 @@ class Lifeguard(Base):
     region = relationship("Region")
     created = Column(DateTime, nullable=False)
     
-
     def __repr__(self) -> str:
         return f"<Lifeguard (id={self.id}), name: {self.name}, phone number: {self.phone}, region: {self.region}>"
-    # TODO add Incident reports 1 : many
+    # TODO add 1 : many Incident reports 
 
 class Region(Base):
     __tablename__ = 'regions'
@@ -28,9 +27,10 @@ class Region(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     created = Column(DateTime, nullable=False)
     
-    manager_id = Column(String, ForeignKey("manager.id"))
+    manager_id = Column(Integer, ForeignKey("managers.id"))
 
 class Manager(Base):
     __tablename__ = 'managers'
     id = Column(Integer, primary_key=True, index=True, default=generate_uuid)
+    name = Column(String)
 

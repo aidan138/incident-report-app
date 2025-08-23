@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends
 from typing import Annotated 
-from db import engine, SessionLocal, Base
+from .db import engine, SessionLocal, Base, get_db
 from sqlalchemy.orm import Session
-from routers import routes
+from .routers import routes
 # from contextlib import asynccontextmanager
 # from . import db, models
 
@@ -17,12 +17,7 @@ app.include_router(routes.router)
 
 Base.metadata.create_all(bind=engine)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+
 
 db_dependency = Annotated[Session, Depends(get_db)] # Session for database
 
