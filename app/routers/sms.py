@@ -11,6 +11,7 @@ twilio_number = settings.twilio_number
 @router.post('/incident')
 async def handle_incident_report(From: str = Form(...),
                                 To: str = Form(...)):
+    
     await send_sms(
         sender=To,
         reciever=From,

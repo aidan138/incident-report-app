@@ -1,20 +1,8 @@
+from sqlalchemy import String, ForeignKey, Integer, orm
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+from app.models.base import Base
 import uuid
-from sqlalchemy import String, ForeignKey, Integer, orm, Table
-from sqlalchemy.orm import relationship, Mapped, mapped_column, Relationship
-from sqlalchemy.types import JSON
-from datetime import datetime
 
-
-class Base(orm.DeclarativeBase):
-    """Base database model."""
-
-    pk: Mapped[uuid.UUID] = orm.mapped_column(
-        primary_key=True,
-        default=uuid.uuid4,
-    )
-    created: Mapped[datetime] = orm.mapped_column(
-        default=datetime.now
-    )
 
 # manager_region = Table(
 #     "manager_region",

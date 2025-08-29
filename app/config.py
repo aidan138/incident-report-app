@@ -6,7 +6,6 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # folder of current script
 ENV_PATH = os.path.join(BASE_DIR, "..", ".env")
-
 logging.basicConfig(level=logging.INFO)
 
 class Settings(BaseSettings):
