@@ -16,7 +16,7 @@ async def get_lifeguard_by_phone(phone: str, db: AsyncSession = Depends(db.get_d
     
 
 @router.post('/create-lifeguard/', response_model=schemas.Lifeguard)
-async def create_lifeguard(lg: schemas.LifeguardCreate, db: AsyncSession = Depends(db.get_db)):
+async def create_lifeguard(lg: schemas.LifeguardPayload, db: AsyncSession = Depends(db.get_db)):
     try:
         existing = await crud.get_lifeguard_by_phone(db, lg.phone)
     except SQLAlchemyError:

@@ -1,14 +1,14 @@
 from uuid import UUID
-from pydantic import BaseModel, NaiveDatetime
+from pydantic import BaseModel, NaiveDatetime, Field
 from datetime import datetime
 
 
-class LifeguardCreate(BaseModel):
-    name: str
-    phone: str
+class LifeguardPayload(BaseModel):
+    name: str = Field(min_length=1)
+    phone: str = Field(min_length=12, max_length=14) # 10 DLC with up to 4 for +country code
     region: str
 
-class Lifeguard(LifeguardCreate):
+class Lifeguard(LifeguardPayload):
     id: UUID
     created: datetime
 
@@ -18,15 +18,15 @@ class Lifeguard(LifeguardCreate):
 
 class Region(BaseModel):
     id: UUID
-    name: str
-    created: NaiveDatetime
+    name: str = Field(min_length=1)
+    created: datetime
 
     class Config:
         orm_mode = True
 
 class Manager(BaseModel):
     id: UUID
-    name: str
+    name: str = Field(min_length=1)
 
     class Config:
         orm_mode = True

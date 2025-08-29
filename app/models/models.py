@@ -1,36 +1,55 @@
 import uuid
-from sqlalchemy import Column, String, ForeignKey, Integer, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, ForeignKey, Integer, orm, Table
+from sqlalchemy.orm import relationship, Mapped, mapped_column, Relationship
 from sqlalchemy.types import JSON
 from datetime import datetime
-from ..db import Base
 
 
-def generate_uuid():
-    return str(uuid.uuid4())
+class Base(orm.DeclarativeBase):
+    """Base database model."""
 
-class Lifeguard(Base):
-    __tablename__ = "lifeguards"
-    id = Column(Integer, primary_key=True, index=True, default=generate_uuid)
-    name = Column(String)
-    phone = Column(String, unique=True, index=True, nullable=False)
-    region = relationship("Region")
-    created = Column(DateTime, nullable=False)
-    
-    def __repr__(self) -> str:
-        return f"<Lifeguard (id={self.id}), name: {self.name}, phone number: {self.phone}, region: {self.region}>"
-    # TODO add 1 : many Incident reports 
+    pk: Mapped[uuid.UUID] = orm.mapped_column(
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    created: Mapped[datetime] = orm.mapped_column(
+        default=datetime.now
+    )
+
+manager_region = Table(
+    "manager_region",
+    mapped_column("manager_id", ForeignKey("managers.pk"), primary_key=True),
+    mapped_column("region_id", ForeignKey("regions.pk"), primary_key=True)
+)
 
 class Region(Base):
     __tablename__ = 'regions'
+    manager_id: Mapped[int] = mapped_column(Integer, ForeignKey("managers.pk"))
 
-    id = Column(String, primary_key=True, default=generate_uuid)
-    created = Column(DateTime, nullable=False)
+    managers: Mapped[list["Manager"]] = relationship(
+        "Manager",
+        secondary=manager_region,
+        back_populates="regions"
+    )
     
-    manager_id = Column(Integer, ForeignKey("managers.id"))
+    lifeguards: Mapped[list["Lifeguard"]] = relationship(back_populates="regions")
 
 class Manager(Base):
     __tablename__ = 'managers'
-    id = Column(Integer, primary_key=True, index=True, default=generate_uuid)
-    name = Column(String)
+    name: Mapped[str] = mapped_column(String, nullable=False)
 
+    regions: Mapped[list["Region"]] = relationship(
+        "region",
+        secondary=manager_region,
+        back_populates="managers"
+    )
+
+class Lifeguard(Base):
+    __tablename__ = "lifeguards"
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    region_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("regions.pk"))
+    region: Mapped["Region"] = relationship(back_populates="lifeguards")
+    
+    def __repr__(self) -> str:
+        return f"<Lifeguard (id={self.pk}), name: {self.name}, phone number: {self.phone}, region: {self.region}>"
