@@ -1,18 +1,15 @@
-import os
-import dotenv
 from fastapi import APIRouter
-from twilio import Client
+from twilio.rest import Client
+from app.config import settings
 
-dotenv.load_dotenv()
-account_sid = os.environ["TWILIO_ACCOUNT_SID"]
-auth_token = os.environ["TWILIO_AUTH_TOKEN"]
-twilio_number = os.environ['TWILIO_NUMBER']
-test_number = os.environ['AIDAN_NUMBER']
+account_sid = settings.twilio_sid
+auth_token = settings.twilio_token
+twilio_number = settings.twilio_number
+test_number = settings.test_number
 
 client = Client(account_sid, auth_token)
 
 router = APIRouter()
-
 
 @router.post('/send')
 async def send_msg(msg: str = 'Hello World!'):

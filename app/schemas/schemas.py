@@ -13,7 +13,7 @@ class Lifeguard(LifeguardPayload):
     created: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class Region(BaseModel):
@@ -22,12 +22,12 @@ class Region(BaseModel):
     created: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Manager(BaseModel):
     id: UUID
     name: str = Field(min_length=1)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
     

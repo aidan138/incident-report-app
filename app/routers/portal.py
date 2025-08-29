@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
-from ..crud import crud
-from ..schemas import schemas
+from app.crud import crud
+from app.schemas import schemas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from .. import db
+from app.db import get_db
 
 router = APIRouter()
 
 @router.get('/get-lifeguard-by-phone-{phone_num}', response_model=schemas.Lifeguard)
-async def get_lifeguard_by_phone(phone: str, db: AsyncSession = Depends(db.get_db)):
+async def get_lifeguard_by_phone(phone: str, db: AsyncSession = Depends(get_db)):
     try:
         return await crud.get_lifeguard_by_phone(db, phone)
     except SQLAlchemyError:
@@ -16,7 +16,7 @@ async def get_lifeguard_by_phone(phone: str, db: AsyncSession = Depends(db.get_d
     
 
 @router.post('/create-lifeguard/', response_model=schemas.Lifeguard)
-async def create_lifeguard(lg: schemas.LifeguardPayload, db: AsyncSession = Depends(db.get_db)):
+async def create_lifeguard(lg: schemas.LifeguardPayload, db: AsyncSession = Depends(get_db)):
     try:
         existing = await crud.get_lifeguard_by_phone(db, lg.phone)
     except SQLAlchemyError:

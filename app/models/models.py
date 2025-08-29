@@ -16,11 +16,17 @@ class Base(orm.DeclarativeBase):
         default=datetime.now
     )
 
-manager_region = Table(
-    "manager_region",
-    mapped_column("manager_id", ForeignKey("managers.pk"), primary_key=True),
-    mapped_column("region_id", ForeignKey("regions.pk"), primary_key=True)
-)
+# manager_region = Table(
+#     "manager_region",
+#     mapped_column("manager_id", ForeignKey("managers.pk"), primary_key=True),
+#     mapped_column("region_id", ForeignKey("regions.pk"), primary_key=True)
+# )
+class ManagerRegion(Base):
+    __tablename__ = 'manager_region'
+
+    manager_id: Mapped[int] = mapped_column("manager_id", ForeignKey("managers.pk"), primary_key=True)
+    name: Mapped[str] = mapped_column("region_id", ForeignKey('regions.pk'), primary_key=True)
+
 
 class Region(Base):
     __tablename__ = 'regions'
@@ -28,7 +34,7 @@ class Region(Base):
 
     managers: Mapped[list["Manager"]] = relationship(
         "Manager",
-        secondary=manager_region,
+        secondary=ManagerRegion,
         back_populates="regions"
     )
     
@@ -40,7 +46,7 @@ class Manager(Base):
 
     regions: Mapped[list["Region"]] = relationship(
         "region",
-        secondary=manager_region,
+        secondary=ManagerRegion,
         back_populates="managers"
     )
 

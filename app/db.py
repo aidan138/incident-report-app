@@ -1,17 +1,21 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from dotenv import load_dotenv
-import os
-load_dotenv()
-DATABASE_URL = os.getenv('DATABASE_URL')
+from collections.abc import AsyncGenerator
+from sqlalchemy import exc
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-engine = create_engine(DATABASE_URL, echo=True) # Creates a data base engine TODO Remove echo in production
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-Base = declarative_base()
- 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+from app.config import settings
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    engine = create_async_engine(settings.database_url, echo=True) # Creates a database engine TODO Remove echo in production
+    factory = async_sessionmaker(engine)
+    async with factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except exc.SQLAlchemyError as error:
+            await session.rollback()
+            raise
