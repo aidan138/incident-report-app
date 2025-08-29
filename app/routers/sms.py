@@ -1,21 +1,21 @@
-from fastapi import APIRouter
-from twilio.rest import Client
+from fastapi import APIRouter, Form
+from app.services.twilio import send_sms
+from twilio.twiml.messaging_response import MessagingResponse
+
 from app.config import settings
 
-account_sid = settings.twilio_sid
-auth_token = settings.twilio_token
-twilio_number = settings.twilio_number
-test_number = settings.test_number
-
-client = Client(account_sid, auth_token)
-
 router = APIRouter()
+twilio_number = settings.twilio_number
 
-@router.post('/send')
-async def send_msg(msg: str = 'Hello World!'):
-    message = client.messages.create(
-        from_= twilio_number,
-        body=msg,
-        to= test_number,
+
+@router.post('/incident')
+async def handle_incident_report(From: str = Form(...),
+                                To: str = Form(...)):
+    await send_sms(
+        sender=To,
+        reciever=From,
+        msg="""Hello you have reached Premier Aquatics Incident Report System.
+
+Reply 'Y' to proceed with the incident report or 'n' to end to cancel"""
     )
-    return {"status": f"{message.status}"}
+
