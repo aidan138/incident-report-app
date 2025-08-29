@@ -17,8 +17,6 @@ app.include_router(routes.router)
 
 Base.metadata.create_all(bind=engine)
 
-
-
 db_dependency = Annotated[Session, Depends(get_db)] # Session for database
 
 @app.get("/")
