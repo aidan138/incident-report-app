@@ -3,9 +3,11 @@ from app.services.twilio import send_sms
 from twilio.twiml.messaging_response import MessagingResponse
 
 from app.config import settings
+from app.core.prompts import build_prompt_flow
 
 router = APIRouter()
 twilio_number = settings.twilio_number
+workflow_head, state_to_node = build_prompt_flow()
 
 
 @router.post('/incident')
