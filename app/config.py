@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     project_name: str = "Premier Aquatics Incident Report System"
 
     database_url: str = ""
+    database_url_sync: str = ""
     twilio_sid: str = Field(validation_alias='twilio_account_sid')
     twilio_token: str = Field(validation_alias='TWILIO_AUTH_TOKEN')
     openai_key: str = ""

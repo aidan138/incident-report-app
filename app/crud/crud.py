@@ -19,11 +19,11 @@ async def create_lifeguard(db: AsyncSession, lifeguard: schemas.Lifeguard) -> po
 
 async def get_incident_by_phone(db: AsyncSession, phone: str) -> Optional[incidents.Incident]:
     q = await db.execute(select(incidents.Incident).where((incidents.Incident.creator_phone == phone) & (incidents.Incident.state != 'done')))
-    scalars = await q.scalars()
-    return await scalars.first()
+    scalars =  q.scalars()
+    return scalars.first()
 
 async def create_incident(db: AsyncSession, phone: str) -> incidents.Incident:
-    new_incident = incidents.Incident(employee_phone=phone)
+    new_incident = incidents.Incident(creator_phone=phone)
     db.add(new_incident)
     await db.commit()
     await db.refresh(new_incident)
