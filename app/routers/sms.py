@@ -43,7 +43,7 @@ async def handle_incident_report(
     curr_incident = await crud.get_incident_by_phone(db, From)
     if curr_incident:
         # Ask the next prompt
-        print("The current incident state is", curr_incident.state)
+        logging.info("The current incident state is", curr_incident.state)
         next_message = await handle_message(db=db, incident=curr_incident, message=Body.strip())
     else:
         # Create a new incident in the db and continue
@@ -139,7 +139,7 @@ def parse_time(time_str) -> tuple[str | None, str | None]:
     
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
-    print(addr_str)
+    logging.info(addr_str)
     # if not re.match(pattern, addr_str):
     #     return None, "Please enter a valid address (ex. 123 Main St, Aliso Viejo, CA 92620)."
     

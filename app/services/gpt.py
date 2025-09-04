@@ -1,25 +1,60 @@
+from openai import AsyncOpenAI, RateLimitError, OpenAIError, Timeout, APIError
+from app.config import settings
+from fastapi import HTTPException
+from app.schemas.schemas import IncidentSummary
+import logging
+import asyncio
 
-Sample_prompt = """You are an assistant that extracts structured data from short incident reports.  
+client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+summary_extractor_prompt = """You are an assistant that extracts structured data from short incident reports.  
 Fill in the following JSON schema.  
 
 If information is not explicitly provided, infer reasonable defaults.  
-- If medical attention was minor (e.g. band-aid), assume no security, law, or ambulance.  
-- If a body part is mentioned (e.g. "right arm cut"), extract it.  
+- If medical attention was minor (e.g. band-aid), assume no security, law, or ambulance.
+- If a body part is mentioned (e.g. "right arm cut"), extract it.
 - If not mentioned, leave it as "" (empty string).  
 - Use "yes" or "no" for boolean fields.  
 
-Return ONLY valid JSON, no explanations.
+Return ONLY valid JSON, no explanations."""
 
-Schema:
-{
-  "type_of_incident": "",
-  "body_part_afflicted": "",
-  "employee_involved": "yes/no",
-  "security_contacted": "yes/no",
-  "law_contacted": "yes/no",
-  "transported_ambulance": "yes/no",
-  "ambulance_to_where": "",
-  "where_incident_occurred": "",
-  "signs_symptoms": "",
-  "type_of_injury": ""
-}"""
+MAX_TRIES = 3
+BACKOFF_FACTOR = 2
+
+
+async def extract_incident_json(model: str, content: str) -> IncidentSummary | None:
+  """Given a prompt, call a LLM to create a valid format JSON output
+
+  Args:
+      model (str): The name of the model to query.
+      prompt (str): The incident summary that needs to be converted to JSON.
+  """
+  for attempt in range(1, MAX_TRIES + 1):
+    try:
+      response = await client.responses.parse(
+        model=model,
+        input=[
+            {"role": "system", "content": summary_extractor_prompt},
+            {
+                "role": "user",
+                "content": content,
+            },
+        ],
+        text_format=IncidentSummary,
+      )
+
+      return response.output_parsed
+
+    except (RateLimitError, Timeout) as e:
+      wait_time = attempt ** BACKOFF_FACTOR
+      logging.warning(f"Attempt {attempt} failed from error: {e}. Retrying in {wait_time}s...")
+      await asyncio.sleep(wait_time)
+    except (APIError, OpenAIError, ValueError) as e:
+      logging.error(f"OpenAI API error or invalid response: {e}")
+      break
+    except Exception as e:
+      logging.critical(f"Unexpected error occurred {e}")
+      break
+  
+  return HTTPException(status_code=503, detail="Failed to extract incident summary from OpenAI API")
+  

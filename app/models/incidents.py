@@ -33,7 +33,6 @@ class Incident(Base):
     was_transported_ambulance: Mapped[str] = mapped_column(String, nullable=True)
     ambulance_to_where: Mapped[str] = mapped_column(String, nullable=True)
     type_of_incident: Mapped[str] = mapped_column(String, nullable=True)
-    address_of_incident: Mapped[str] = mapped_column(String, nullable=True)
     
     # SAMPLE answers
     signs_symptoms: Mapped[str] = mapped_column(String, nullable=True)
