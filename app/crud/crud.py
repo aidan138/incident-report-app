@@ -28,3 +28,7 @@ async def create_incident(db: AsyncSession, phone: str) -> incidents.Incident:
     await db.commit()
     await db.refresh(new_incident)
     return new_incident
+
+async def delete_incident(db: AsyncSession, incident: incidents.Incident):
+    d = await db.delete().where(incidents.Incident.pk == incident.pk)
+    d.execute()
