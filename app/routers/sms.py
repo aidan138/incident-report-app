@@ -8,6 +8,7 @@ from app.crud import crud
 from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
 import re
+import logging
 
 router = APIRouter()
 twilio_number = settings.twilio_number
@@ -28,6 +29,7 @@ addr_pat = r"""
 \s*$
 """
 pattern = re.compile(addr_pat, re.VERBOSE)
+date_lens = (2,2,4)
 
 
 @router.post('/incident')
@@ -50,9 +52,9 @@ async def handle_incident_report(
     
     if next_message == end_msg:
         await crud.delete_incident(db, curr_incident)
-
-    print(next_message)
-    await send_sms(To, From, next_message)    
+    else:
+        logging.info(next_message)
+        await send_sms(To, From, next_message)    
 
 
 async def handle_message(db: AsyncSession, incident: Incident, message: str):
@@ -66,6 +68,15 @@ async def handle_message(db: AsyncSession, incident: Incident, message: str):
         valid_output, error_msg = parse_phone_number(message)
     elif "address" in incident.state:
         valid_output, error_msg = parse_address(message)
+    elif "date" in incident.state:
+        valid_output, error_msg = parse_date(message)
+    elif "time" in incident.state:
+        valid_output, error_msg = parse_time(message)
+    elif incident.state == "witness" and message.upper() == "NA":
+        # Need to skip the next field
+        valid_output = "NA"
+        curr_state = curr_state.next
+            
     elif incident.state == "summary":
         # For the initial text chat
         return
@@ -76,11 +87,11 @@ async def handle_message(db: AsyncSession, incident: Incident, message: str):
         error_msg = "This report has already been concluded."
     
     else:
-        valid_output = message
+        valid_output = message.capitalize()
     
     if valid_output:
         # Update the database with the validated output
-        if incident.state != "start":
+        if incident.state != "start" or valid_output != 'NA':
             setattr(incident, curr_state.field_name, valid_output)
         incident.state = curr_state.next.field_name
         await db.commit()
@@ -95,12 +106,42 @@ def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     phone_str = phone_str if phone_str.startswith("+") else "+1" + phone_str
     if phone_str[1:].isdigit() and 11 <= len(phone_str[1:]) < 14:
         return phone_str, None
-    return "Please input a valid phone number As a single number (ex: (123) 1234-1234 would be 1231234123).", None
+    return None, "Please input a valid phone number As a single number (ex: (123) 1234-1234 would be 1231234123)."
+
+def parse_date(date_str: str) -> tuple[str | None, str | None]:
+    #TODO more robust handling ensuring valid dates and times
+    date_list = date_str.split("/")
+    if len(date_list) == 3:
+        valid_output, error_msg = date_str, None
+        for act_len, exp_len in zip([len(date) for date in date_list], date_lens):
+            if act_len != exp_len:
+                valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
+                break
+    else:
+        valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
+    return valid_output, error_msg
+    
+def parse_time(time_str) -> tuple[str | None, str | None]:
+    time_list = time_str.split(":")
+    if len(time_list) == 2 and len(time_list[0]) == 2 and len(time_list[1]) == 4:
+        hours, minutes_m = time_list
+        minutes, am_o_pm = minutes_m[:2], minutes_m[2:].lower()
+        
+        if 12 < int(hours) or int(hours) <= 0 or int(minutes) < 0 or int(minutes) >= 60 or\
+        (am_o_pm != 'am' and am_o_pm != 'pm'):
+            valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
+        else:
+            valid_output, error_msg = time_str[:-2] + am_o_pm, None # Unifies the am/pm to be lower case
+    else:
+        valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
+    return valid_output, error_msg
+            
+    
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     print(addr_str)
-    if not re.match(pattern, addr_str):
-        return None, "Please enter a valid address (ex. 123 Main St, Aliso Viejo, CA 92620)."
+    # if not re.match(pattern, addr_str):
+    #     return None, "Please enter a valid address (ex. 123 Main St, Aliso Viejo, CA 92620)."
     
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
@@ -108,12 +149,13 @@ def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     return None, "We couldn't locate that address. Please check for typos."
 
 def parse_start(start_msg: str) -> tuple[str | None, str | None]:
+    logging.info(f"The message in parse start {start_msg}")
     if start_msg == "Y":
         # Valid message
         return start_msg, None
     
     elif start_msg == "n":
         # Must terminate the database instance
-        None, end_msg
+        return None, end_msg
 
     return None, "Reply 'Y' to proceed with the incident report or 'n' to cancel"
