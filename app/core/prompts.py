@@ -2,29 +2,11 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
-
-class InvolvedPersonState(str, enum.Enum):
-    start = 'start'
-    employee_name = 'employee_name'
-    involved_name = 'person_involved_name'
-    involved_age = 'person_involved_age'
-    involved_phone = 'person_involved_phone_number'
-    involved_guest_of = 'person_involved_guest_of'
-    involved_address = 'person_involved_address'
-    involved_guardian = 'person_involved_guardian'
-
-class BasicIncidentInfoState(str, enum.Enum):
-    # Incident info
-    doi = 'date_of_incident'
-    toi = 'time_of_incident'
-    facility_name = 'facility_name'
-    incident_address = 'address_of_incident'
-
 PROMPTS = {
     'start': """Hello you have reached Premier Aquatics Incident Report System.
 
-Reply 'Y' to proceed with the incident report or 'n' to end to cancel""",
-    'employee_name': "What is your name?",
+Reply 'Y' to proceed with the incident report or 'n' to cancel""",
+    'employee_completing_report': "What is your name?",
     'person_involved_name': "What is the name of the person involved in the injury/incident?",
     'person_involved_age': "What is the age of the person involved in the incident?",
     'person_involved_phone_number': "As a single number (ex: (123) 1234-1234 would be 1231234123), describe the phone number of the person involved in the incident.",
@@ -50,7 +32,6 @@ class StateNode:
 
 
 def build_prompt_flow() -> tuple[StateNode, list[StateNode]]:
-    mandatory_states = list(InvolvedPersonState) + list(BasicIncidentInfoState)
     head = None
     prev_node = None
     field_to_node: dict[str, StateNode] = {}

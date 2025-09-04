@@ -12,9 +12,23 @@ import re
 router = APIRouter()
 twilio_number = settings.twilio_number
 workflow_head, state_to_node = build_prompt_flow()
-addr_pat = r'^\d+\s[A-Za-z0-9\s]+(?:,\s*[A-Za-z\s]+)?(?:,\s*[A-Z]{2}\s*\d{5})?$'
 geolocator = Nominatim(user_agent='address_validator')
 end_msg = "TERMINATE"
+addr_pat = r"""
+^
+\s*                                                 
+([\d\w\s.-]+(?:\s(?:Apt|Suite|\#)\s*\d+)?)          # street with optional unit
+(?:,|\r?\n)\s*                                      # comma or newline separator
+([\w\s.-]+)                                         # city
+(?:,|\s)                                            # optional comma or space before region/state
+([A-Z]{2}|[\w\s.-]+)?                               # US state or international region (optional)
+\s*                                                 # optional spaces
+(\d{5}(?:-\d{4})?|\w+)?                             # ZIP/postal code (US or international) optional
+(?:\r?\n([\w\s]+))?                                 # optional country line
+\s*$
+"""
+pattern = re.compile(addr_pat, re.VERBOSE)
+
 
 @router.post('/incident')
 async def handle_incident_report(
@@ -27,6 +41,7 @@ async def handle_incident_report(
     curr_incident = await crud.get_incident_by_phone(db, From)
     if curr_incident:
         # Ask the next prompt
+        print("The current incident state is", curr_incident.state)
         next_message = await handle_message(db=db, incident=curr_incident, message=Body.strip())
     else:
         # Create a new incident in the db and continue
@@ -61,13 +76,14 @@ async def handle_message(db: AsyncSession, incident: Incident, message: str):
         error_msg = "This report has already been concluded."
     
     else:
-        None
+        valid_output = message
     
     if valid_output:
         # Update the database with the validated output
-        setattr(incident, curr_state.field_name, valid_output)
+        if incident.state != "start":
+            setattr(incident, curr_state.field_name, valid_output)
         incident.state = curr_state.next.field_name
-        db.commit()
+        await db.commit()
         await db.refresh(incident)
         return curr_state.next.prompt
     else:
@@ -82,7 +98,8 @@ def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     return "Please input a valid phone number As a single number (ex: (123) 1234-1234 would be 1231234123).", None
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
-    if not re.match(addr_pat, addr_str):
+    print(addr_str)
+    if not re.match(pattern, addr_str):
         return None, "Please enter a valid address (ex. 123 Main St, Aliso Viejo, CA 92620)."
     
     location = geolocator.geocode(addr_str, timeout=5)
