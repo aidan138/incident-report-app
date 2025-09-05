@@ -9,6 +9,8 @@ from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
 import re
 import logging
+from app.services.gpt import extract_incident_info
+from app.schemas.schemas import IncidentSummary, TypeOfIncident
 
 router = APIRouter()
 twilio_number = settings.twilio_number
@@ -30,6 +32,7 @@ addr_pat = r"""
 """
 pattern = re.compile(addr_pat, re.VERBOSE)
 date_lens = (2,2,4)
+fatal_server_response = "Incident reporting service currently down. Please perform handwritten incident reporting."
 
 
 @router.post('/incident')
@@ -41,14 +44,31 @@ async def handle_incident_report(
 ):
     
     curr_incident = await crud.get_incident_by_phone(db, From)
-    if curr_incident:
-        # Ask the next prompt
-        logging.info("The current incident state is", curr_incident.state)
-        next_message = await handle_message(db=db, incident=curr_incident, message=Body.strip())
-    else:
+    if not curr_incident:
         # Create a new incident in the db and continue
         curr_incident = await crud.create_incident(db=db, phone=From)
         next_message = workflow_head.prompt
+    elif curr_incident.state == "summmary":
+        try:
+            next_message = await handle_summary(db, curr_incident, Body)
+        except HTTPException as e:
+            logging.fatal(f"Unable to extract incident summary: {e}.")
+            raise e
+        finally:
+            send_sms(From, To, fatal_server_response)
+
+    elif curr_incident.state == "follow-up":
+        try:
+            next_message = await handle_follow_up(db, curr_incident, Body)
+        except HTTPException as e:
+            logging.fatal(f"Unable to ask follow-ups to complete incident reporst: {e}")
+            raise e
+        finally:
+            send_sms(From, To, fatal_server_response)
+    else:
+        # Ask the next prompt
+        logging.info("The current incident state is", curr_incident.state)
+        next_message = await handle_serial_message(db=db, incident=curr_incident, message=Body.strip())
     
     if next_message == end_msg:
         await crud.delete_incident(db, curr_incident)
@@ -57,7 +77,7 @@ async def handle_incident_report(
         await send_sms(To, From, next_message)    
 
 
-async def handle_message(db: AsyncSession, incident: Incident, message: str):
+async def handle_serial_message(db: AsyncSession, incident: Incident, message: str):
     curr_state = state_to_node[incident.state]
     valid_output, error_msg = None, None
 
@@ -76,17 +96,11 @@ async def handle_message(db: AsyncSession, incident: Incident, message: str):
         # Need to skip the next field
         valid_output = "NA"
         curr_state = curr_state.next
-            
-    elif incident.state == "summary":
-        # For the initial text chat
-        return
-    elif incident.state == "follow_up":
-        # After the initial text summary have ChatGPT ask follow ups for information it is unsure of
-        return
     elif incident.state == "done":
+        # TODO Handle the end of message flows gracefully to allow same lifeguard to file multiple reports
         error_msg = "This report has already been concluded."
-    
     else:
+        # Handles names
         valid_output = message.capitalize()
     
     if valid_output:
@@ -100,6 +114,33 @@ async def handle_message(db: AsyncSession, incident: Incident, message: str):
     else:
         # Simply return the error message without changing the updated state
         return error_msg
+
+async def handle_summary(db, incident, message):
+    # Set the incidents summary to be the message
+    incident.summary = message
+    incident_summary = await extract_incident_info(model=settings.openai_model, content=message)
+    
+def analyze_summary(incident: Incident, incident_summary: IncidentSummary) -> list[str]:
+    """Analyze a provided Incident Summary to determine what required fields are still absent from the report.
+
+    Args:
+        incident (Incident): A database instance of an Instance that will be updated
+        incident_details (IncidentSummary): A potentially incomplete IncidentSummary requiring followups to be asked.
+
+    Returns:
+        list[str]: A list of missing required fields.
+    """
+    missing_fields = []
+    blank_fields = dict(filter(lambda x: getattr(incident_summary, x[0]) == '', incident_summary.__pydantic_fields__))
+    filled_fields = incident_summary.model_dump() - blank_fields
+    sample_required = filled_fields.get('type_of_incident') != 'other'        
+    
+
+    return missing_fields
+
+
+def handle_follow_up(db, incident):
+    pass
 
 
 def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
@@ -135,8 +176,6 @@ def parse_time(time_str) -> tuple[str | None, str | None]:
     else:
         valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
     return valid_output, error_msg
-            
-    
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     logging.info(addr_str)
@@ -153,7 +192,6 @@ def parse_start(start_msg: str) -> tuple[str | None, str | None]:
     if start_msg == "Y":
         # Valid message
         return start_msg, None
-    
     elif start_msg == "n":
         # Must terminate the database instance
         return None, end_msg

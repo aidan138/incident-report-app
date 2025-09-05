@@ -22,12 +22,16 @@ MAX_TRIES = 3
 BACKOFF_FACTOR = 2
 
 
-async def extract_incident_json(model: str, content: str) -> IncidentSummary | None:
-  """Given a prompt, call a LLM to create a valid format JSON output
+async def extract_incident_info(model: str, content: str) -> IncidentSummary:
+  """Given a prompt, call a LLM to create a validated incident summary.
 
   Args:
       model (str): The name of the model to query.
       prompt (str): The incident summary that needs to be converted to JSON.
+  Returns:
+      IncidentSummary: Validated summary with missing info left as empty strings.
+  Raises:
+      HTTPException: When out of retries or API errors occur.
   """
   for attempt in range(1, MAX_TRIES + 1):
     try:
@@ -56,5 +60,7 @@ async def extract_incident_json(model: str, content: str) -> IncidentSummary | N
       logging.critical(f"Unexpected error occurred {e}")
       break
   
-  return HTTPException(status_code=503, detail="Failed to extract incident summary from OpenAI API")
+  raise HTTPException(status_code=503, detail="Failed to extract incident summary from OpenAI API")
   
+async def generate_incident_followups(model: str, missing_fields: list[str]):
+  pass

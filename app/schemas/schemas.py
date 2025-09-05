@@ -21,7 +21,7 @@ class TypeofInjury(Enum):
     Stroke = "stroke"
     Choking = "choking"
     CutScrape = "cut_scrape"
-    HeartAttack = "HeartAttack"
+    HeartAttack = "heart_attack"
     Other = "other"
 
 class LifeguardPayload(BaseModel):
@@ -55,6 +55,7 @@ class Manager(BaseModel):
 class IncidentSummary(BaseModel):
     body_part_afflicted: Optional[str] = None
     type_of_incident: TypeOfIncident
+    type_of_injury: TypeofInjury
     was_employee_involved: Optional[Literal["yes", "no"]] = None
     was_security_contacted: Optional[Literal["yes", "no"]] = None
     was_law_contacted: Optional[Literal["yes", "no"]] = None
