@@ -9,8 +9,8 @@ from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
 import re
 import logging
-from app.services.gpt import extract_incident_info
-from app.schemas.schemas import IncidentSummary, TypeOfIncident
+from app.services.gpt import extract_incident_info, generate_incident_followups
+from app.schemas.schemas import IncidentSummary
 
 router = APIRouter()
 twilio_number = settings.twilio_number
@@ -119,12 +119,15 @@ async def handle_summary(db, incident, message):
     # Set the incidents summary to be the message
     incident.summary = message
     incident_summary = await extract_incident_info(model=settings.openai_model, content=message)
+    missing_fields = analyze_summary(incident=incident, incident_summary=incident_summary)
+    follow_ups = await generate_incident_followups(model=settings.openai_model, missing_fields=missing_fields)
+    
     
 def analyze_summary(incident: Incident, incident_summary: IncidentSummary) -> list[str]:
-    """Analyze a provided Incident Summary to determine what required fields are still absent from the report.
+    """Analyze a provided Incident Summary to determine what required fields are still absent from the report. And update the database model with the fields provided.
 
     Args:
-        incident (Incident): A database instance of an Instance that will be updated
+        incident (Incident): A database instance of an Instance that will be updated.
         incident_details (IncidentSummary): A potentially incomplete IncidentSummary requiring followups to be asked.
 
     Returns:
@@ -133,13 +136,11 @@ def analyze_summary(incident: Incident, incident_summary: IncidentSummary) -> li
     missing_fields = []
     blank_fields = dict(filter(lambda x: getattr(incident_summary, x[0]) == '', incident_summary.__pydantic_fields__))
     filled_fields = incident_summary.model_dump() - blank_fields
-    sample_required = filled_fields.get('type_of_incident') != 'other'        
-    
-
+    sample_required = filled_fields.get('type_of_incident') != 'other'
     return missing_fields
 
 
-def handle_follow_up(db, incident):
+def handle_follow_up(db: AsyncSession, incident: Incident):
     pass
 
 

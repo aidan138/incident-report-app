@@ -1,8 +1,10 @@
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import update
 from sqlalchemy.future import select
 from ..models import portal, incidents
 from ..schemas import schemas
+from typing import Iterable
 
 
 async def get_lifeguard_by_phone(db: AsyncSession, phone: str) -> Optional[portal.Lifeguard]:
@@ -29,6 +31,31 @@ async def create_incident(db: AsyncSession, phone: str) -> incidents.Incident:
     await db.refresh(new_incident)
     return new_incident
 
-async def delete_incident(db: AsyncSession, incident: incidents.Incident):
+async def delete_incident(db: AsyncSession, incident: incidents.Incident) -> None:
     await db.delete(incident)
     await db.commit()
+
+async def update_incident_fields(db: AsyncSession, incident_pk: int, fields_to_values: dict[str, str]) -> int:
+    """Update multiple incident fields in a grouped update given a incident primary key.
+
+    Args:
+        db (AsyncSession): The reference to the database.
+        incident_pk (int): The primary key of the incident to be updated.
+        fields_to_values (dict[str, str]): dictionary containing keys=field, values=content for incident reports.
+
+    Returns:
+        int: The number of rows updated in the database.
+    """
+    statement = (
+        update(incidents.Incident)
+        .where(incidents.Incident.pk == incident_pk)
+        .values(fields_to_values)
+        .execution_options(synchronize_session="fetch")
+    )
+    result = await db.execute(statement=statement)
+    await db.commit()
+    return result.rowcount
+
+# async def update_incident(db: AsyncSession, incident: incidents.Incident) -> incidents.Incident:
+#     await db.commit()
+#     await db.refresh(incident)
