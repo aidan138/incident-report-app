@@ -75,7 +75,6 @@ class Incident(BaseModel):
     state: str
     creator_phone: str
     employee_completing_report: str
-    date_of_report: str
 
     person_involved_name: str
     person_involved_age: str
@@ -84,13 +83,13 @@ class Incident(BaseModel):
     person_involved_address: str
     person_involved_guardian: str
 
-    date_of_incident: str
     time_of_incident: str
     facility_name: str
     incident_address: str
     
+    date_of_incident: str
     incident_summary: str
-    witness: str
+    witness: Optional[str] = None
     witness_phone: Optional[str] = None
 
     # Potentially missing fields

@@ -48,7 +48,7 @@ async def handle_incident_report(
         # Create a new incident in the db and continue
         curr_incident = await crud.create_incident(db=db, phone=From)
         next_message = workflow_head.prompt
-    elif curr_incident.state == "summmary":
+    elif curr_incident.state == "incident_summary":
         try:
             next_message = await handle_summary(db, curr_incident, Body)
         except HTTPException as e:
@@ -120,7 +120,8 @@ async def handle_summary(db, incident, message):
     incident.summary = message
     incident_summary = await extract_incident_info(model=settings.openai_model, content=message)
     logging.info(f"Incident orm model before updating {incident}")
-    await crud.update_incident_fields(db=db, incident_pk=incident.pk, fields_to_values=incident_summary.model_dump())
+    await crud.update_incident_fields(db=db, incident_pk=incident.pk, fields_to_values=incident_summary.model_dump() | dict(incident_summary=message))
+    await db.refresh(incident)
     logging.info(f"Incident orm model after updating {incident}")
     missing_fields = schemas.Incident.model_validate(incident).missing_fields
     logging.info(f"Found the following missing fields from summary: {missing_fields}")

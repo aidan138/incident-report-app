@@ -1,7 +1,8 @@
-from sqlalchemy import String, ForeignKey, Integer, orm
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy import String, Enum
+from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
-import uuid
+from app.schemas.schemas import TypeOfIncident, TypeofInjury
+
 
 
 class Incident(Base):
@@ -10,7 +11,6 @@ class Incident(Base):
     state: Mapped[str] = mapped_column(String, nullable=False, default="start")
     creator_phone: Mapped[str] = mapped_column(String, nullable=False)
     employee_completing_report: Mapped[str] = mapped_column(String, nullable=True)
-    date_of_report: Mapped[str] = mapped_column(String, nullable=True)
 
     person_involved_name: Mapped[str] = mapped_column(String, nullable=True)
     person_involved_age: Mapped[str] = mapped_column(String, nullable=True)
@@ -32,7 +32,7 @@ class Incident(Base):
     was_law_contacted: Mapped[str] = mapped_column(String, nullable=True) # yes or no
     was_transported_ambulance: Mapped[str] = mapped_column(String, nullable=True)
     ambulance_to_where: Mapped[str] = mapped_column(String, nullable=True)
-    type_of_incident: Mapped[str] = mapped_column(String, nullable=True)
+    type_of_incident: Mapped[TypeOfIncident] = mapped_column(Enum(TypeOfIncident, name="type_of_incident_enum", native_enum=False), nullable=True)
     
     # SAMPLE answers
     signs_symptoms: Mapped[str] = mapped_column(String, nullable=True)
@@ -42,7 +42,9 @@ class Incident(Base):
     last_food_drink: Mapped[str] = mapped_column(String, nullable=True)
     events_leading_up: Mapped[str] = mapped_column(String, nullable=True)
 
-    type_of_injury: Mapped[str] = mapped_column(String, nullable=True)
+    type_of_injury: Mapped[TypeofInjury] = mapped_column(
+        Enum(TypeofInjury, name="type_of_injury_enum", native_enum=False), nullable=True
+    )
 
     witness: Mapped[str] = mapped_column(String, nullable=True)
     witness_phone: Mapped[str] = mapped_column(String, nullable=True)
