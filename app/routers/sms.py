@@ -128,7 +128,9 @@ async def handle_summary(db, incident, message):
     if not missing_fields:
         incident.state = "done"
         await db.commit()
-        return "All required information has been collected. Thank you."
+        incident_id = incident.pk
+        return f"""Your incident report is ready for review. Please confirm your report here:
+https://bc8740461194.ngrok-free.app/incident/{incident_id}/review"""
 
     follow_ups = await generate_incident_followups(model=settings.openai_model, missing_fields=missing_fields)
     logging.info(f"Generated the follow-ups: {follow_ups}")
@@ -152,10 +154,14 @@ async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
 
     # Handle running out of followups
     if not followups:
-        incident.state = "done"
+        # incident.state = "done"
         incident.followups = {}
+        incident_id = incident.pk  # Access inside session
+
         await db.commit()
-        return "All required information has been collected. Thank you."
+
+        return f"""Your incident report is ready for review. Please confirm your report here:
+https://DOMAIN_URL/incident/{incident_id}/review""" # TODO Change to domain url in production
     
     # Get the next question and update the incidents current state
     next_field, next_question = next(iter(followups.items()))

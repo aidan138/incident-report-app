@@ -1,19 +1,16 @@
 from fastapi import FastAPI
-from app.routers import portal, sms
+from app.routers import portal, sms, web_router
 from app.core.exceptions import register_exceptions
 from app.config import settings
-# from contextlib import asynccontextmanager
-# from . import db, models
+from fastapi.templating import Jinja2Templates
 
-
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     async with db.engine.begin() as conn:
-#         await conn.run_sync(db.Base.metadata.create_all())
+templates = Jinja2Templates(directory="app/templates")
 
 app = FastAPI(title=settings.project_name)
 app.include_router(portal.router, prefix="/portal")
 app.include_router(sms.router, prefix="/sms")
+app.include_router(web_router.router)
+
 register_exceptions(app=app)
 
 @app.get("/")
