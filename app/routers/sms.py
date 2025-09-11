@@ -5,6 +5,7 @@ from app.services.twilio import send_sms
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.crud import crud
+from app.schemas import schemas
 from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
 import re
@@ -119,7 +120,7 @@ async def handle_summary(db, incident, message):
     # Set the incidents summary to be the message
     incident.summary = message
     incident_summary = await extract_incident_info(model=settings.openai_model, content=message)
-    missing_fields = analyze_summary(incident=incident, incident_summary=incident_summary)
+    missing_fields = schemas.Incident.model_validate(incident).missing_fields
     follow_ups = await generate_incident_followups(model=settings.openai_model, missing_fields=missing_fields)
     
     
