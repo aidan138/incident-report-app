@@ -50,7 +50,6 @@ async def handle_incident_report(
         next_message = workflow_head.prompt
 
     elif curr_incident.followups:
-        logging.fatal(f"The current followups: {curr_incident.followups} and state is: {curr_incident.state}")
         try:
             next_message = await handle_follow_up(db, curr_incident, Body)
         except HTTPException as e:
@@ -161,7 +160,6 @@ async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
     # Get the next question and update the incidents current state
     next_field, next_question = next(iter(followups.items()))
     incident.state = next_field
-    logging.fatal(f"Incident db stored followups: {incident.followups}")
     await db.commit()    
     return next_question
 
@@ -187,7 +185,7 @@ def parse_date(date_str: str) -> tuple[str | None, str | None]:
     
 def parse_time(time_str) -> tuple[str | None, str | None]:
     time_list = time_str.split(":")
-    if len(time_list) == 2 and len(time_list[0]) == 2 and len(time_list[1]) == 4:
+    if len(time_list) == 2 and 0 < len(time_list[0]) <= 2 and len(time_list[1]) == 4:
         hours, minutes_m = time_list
         minutes, am_o_pm = minutes_m[:2], minutes_m[2:].lower()
         

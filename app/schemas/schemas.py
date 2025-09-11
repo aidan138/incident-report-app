@@ -119,10 +119,6 @@ class Incident(BaseModel):
         # Define groups of fields that must be filled together
         groups = [
             [
-                "was_transported_ambulance", # Ambulance check
-                "ambulance_to_where",
-            ],
-            [
                 "signs_symptoms", # SAMPLE acronym
                 "allergies",
                 "medications",
@@ -131,13 +127,30 @@ class Incident(BaseModel):
                 "events_leading_up",
             ],
         ]
+        required_fields = []
+        if getattr(values, "was_transported_ambulance") == "yes":
+            missing.append("ambulance_to_where")  
 
+        if getattr(values, "type_of_injury") != "other":
+            required_fields.extend([
+                "signs_symptoms",
+                "allergies",
+                "medications",
+                "past_history",
+                "last_food_drink",
+                "events_leading_up",
+            ])
+        
         for group in groups:
             filled = any(getattr(values, field, None) for field in group)
             if filled:
                 for field in group:
                     if not getattr(values, field, None):
                         missing.append(field)
+
+        for field in required_fields:
+            if not getattr(values, field, None) and field not in missing:
+                missing.append(field)
 
         values.missing_fields = missing
         return values
