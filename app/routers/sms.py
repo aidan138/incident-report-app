@@ -48,23 +48,24 @@ async def handle_incident_report(
         # Create a new incident in the db and continue
         curr_incident = await crud.create_incident(db=db, phone=From)
         next_message = workflow_head.prompt
+
+    elif curr_incident.followups:
+        logging.fatal(f"The current followups: {curr_incident.followups} and state is: {curr_incident.state}")
+        try:
+            next_message = await handle_follow_up(db, curr_incident, Body)
+        except HTTPException as e:
+            logging.fatal(f"Unable to ask follow-ups to complete incident reporst: {e}")
+            await send_sms(From, To, fatal_server_response)
+            raise e
+
     elif curr_incident.state == "incident_summary":
         try:
             next_message = await handle_summary(db, curr_incident, Body)
         except HTTPException as e:
             logging.fatal(f"Unable to extract incident summary: {e}.")
+            await send_sms(From, To, fatal_server_response)
             raise e
-        finally:
-            send_sms(From, To, fatal_server_response)
 
-    elif curr_incident.state == "follow-up":
-        try:
-            next_message = await handle_follow_up(db, curr_incident, Body)
-        except HTTPException as e:
-            logging.fatal(f"Unable to ask follow-ups to complete incident reporst: {e}")
-            raise e
-        finally:
-            send_sms(From, To, fatal_server_response)
     else:
         # Ask the next prompt
         logging.info("The current incident state is", curr_incident.state)
@@ -125,12 +126,44 @@ async def handle_summary(db, incident, message):
     logging.info(f"Incident orm model after updating {incident}")
     missing_fields = schemas.Incident.model_validate(incident).missing_fields
     logging.info(f"Found the following missing fields from summary: {missing_fields}")
+    if not missing_fields:
+        incident.state = "done"
+        await db.commit()
+        return "All required information has been collected. Thank you."
+
     follow_ups = await generate_incident_followups(model=settings.openai_model, missing_fields=missing_fields)
     logging.info(f"Generated the follow-ups: {follow_ups}")
+    follow_ups_dict = follow_ups.model_dump()
+    incident.followups = follow_ups_dict
+    first_field = missing_fields[0]
+    incident.state = first_field
+    await db.commit()
+
+    return getattr(follow_ups, first_field)
 
 
-def handle_follow_up(db: AsyncSession, incident: Incident):
-    pass
+async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
+    current_field = incident.state
+    setattr(incident, current_field, message)
+
+    # Retrieve followups and remove last asked question
+    
+    incident.followups.pop(current_field, None)
+    followups = incident.followups
+
+    # Handle running out of followups
+    if not followups:
+        incident.state = "done"
+        incident.followups = {}
+        await db.commit()
+        return "All required information has been collected. Thank you."
+    
+    # Get the next question and update the incidents current state
+    next_field, next_question = next(iter(followups.items()))
+    incident.state = next_field
+    logging.fatal(f"Incident db stored followups: {incident.followups}")
+    await db.commit()    
+    return next_question
 
 
 def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:

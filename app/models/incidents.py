@@ -1,5 +1,6 @@
-from sqlalchemy import String, Enum
+from sqlalchemy import String, Enum, JSON
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.ext.mutable import MutableDict
 from app.models.base import Base
 from app.schemas.schemas import TypeOfIncident, TypeofInjury
 
@@ -49,3 +50,8 @@ class Incident(Base):
     witness: Mapped[str] = mapped_column(String, nullable=True)
     witness_phone: Mapped[str] = mapped_column(String, nullable=True)
 
+    followups: Mapped[dict] = mapped_column(
+        MutableDict.as_mutable(JSON),
+        nullable=False,
+        default=dict,
+    )
