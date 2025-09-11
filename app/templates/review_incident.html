@@ -6,7 +6,7 @@
     body { font-family: Arial, sans-serif; margin: 2em; }
     form { display: flex; flex-direction: column; max-width: 400px; }
     label { margin-top: 1em; }
-    input, textarea { padding: 0.5em; font-size: 1em; }
+    input, textarea, select { padding: 0.5em; font-size: 1em; }
     button { margin-top: 2em; padding: 0.7em; background: #007BFF; color: white; border: none; cursor: pointer; }
     button:hover { background: #0056b3; }
     .success { color: green; }
@@ -24,9 +24,19 @@
     <p class="success">✅ Incident confirmed and sent to manager!</p>
   {% endif %}
 
-  <form method="post" action="{{ request.url.path }}/confirm">
+  <form method="post" action="{{ request.url.path.rsplit('/', 1)[0] }}/confirm">
     <label>
-      Name:
+      Employee Completing Report:
+      <input type="text" name="employee_completing_report" value="{{ incident.employee_completing_report or '' }}">
+    </label>
+
+    <label>
+      Employee Phone Number:
+      <input type="text" name="creator_phone" value="{{ incident.creator_phone or '' }}">
+    </label>
+
+    <label>
+      Person Involved in Injury or Incident:
       <input type="text" name="person_involved_name" value="{{ incident.person_involved_name or '' }}">
     </label>
 
@@ -36,13 +46,144 @@
     </label>
 
     <label>
-      Phone:
+      Phone Number:
       <input type="text" name="person_involved_phone_number" value="{{ incident.person_involved_phone_number or '' }}">
     </label>
 
     <label>
+      Guest Of:
+      <input type="text" name="person_involved_guest_of" value="{{ incident.person_involved_guest_of or '' }}">
+    </label>
+
+    <label>
+      Address:
+      <input type="text" name="person_involved_address" value="{{ incident.person_involved_address or '' }}">
+    </label>
+
+    <label>
+      If minor, Name of Parent or Guardian:
+      <input type="text" name="person_involved_guardian" value="{{ incident.person_involved_guardian or '' }}">
+    </label>
+
+    <label>
+      Date of Incident:
+      <input type="text" name="date_of_incident" value="{{ incident.date_of_incident or '' }}">
+    </label>
+
+    <label>
+      Time of Incident:
+      <input type="text" name="time_of_incident" value="{{ incident.time_of_incident or '' }}">
+    </label>
+
+    <label>
+      Facility Name:
+      <input type="text" name="facility_name" value="{{ incident.facility_name or '' }}">
+    </label>
+
+    <label>
+        Address of Incident:
+      <input type="text" name="incident_address" value="{{ incident.incident_address or '' }}">
+    </label>
+
+    <label>
+      Employee:
+      <input type="text" name="was_employee_involved" value="{{ incident.was_employee_involved or '' }}">
+    </label>
+
+    <label>
+      Was Security Contacted?:
+      <input type="text" name="was_security_contacted" value="{{ incident.was_security_contacted or '' }}">
+    </label>
+
+    <label>
+      Was 911 Called?:
+      <input type="text" name="was_law_contacted" value="{{ incident.was_law_contacted or '' }}">
+    </label>
+
+    <label>
+      Was injured person transported by ambulance?:
+      <input type="text" name="was_transported_ambulance" value="{{ incident.was_transported_ambulance or '' }}">
+    </label>
+
+    <label>
+      If yes, to where?:
+      <input type="text" name="ambulance_to_where" value="{{ incident.ambulance_to_where or '' }}">
+    </label>
+
+
+    <label>
+        Type of Incident:
+        <select name="type_of_incident">
+            {% for option in TypeOfIncident %}
+            <option value="{{ option.value }}"
+                {% if incident.type_of_incident.value == option.value %}selected{% endif %}>
+                {{ option.name.replace('_', ' ') }}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+
+    <label>
+      Signs & Symptoms:
+      <input type="text" name="signs_symptoms" value="{{ incident.signs_symptoms or '' }}">
+    </label>
+
+    <label>
+      Allergies:
+      <input type="text" name="allergies" value="{{ incident.allergies or '' }}">
+    </label>
+
+    <label>
+      Medications:
+      <input type="text" name="medications" value="{{ incident.medications or '' }}">
+    </label>
+
+    <label>
+      Past History:
+      <input type="text" name="past_history" value="{{ incident.past_history or '' }}">
+    </label>
+
+    <label>
+      Last Food/Drink:
+      <input type="text" name="last_food_drink" value="{{ incident.last_food_drink or '' }}">
+    </label>
+
+    <label>
+      Events Leading Up:
+      <textarea name="events_leading_up">{{ incident.events_leading_up or '' }}</textarea>
+    </label>
+
+    <label>
+        Type of Injury:
+        <select name="type_of_injury">
+            {% for option in TypeOfInjury %}
+            <option value="{{ option.value }}"
+                {% if incident.type_of_injury.value == option.value %}selected{% endif %}>
+                {{ option.name.replace('_', ' ') }}
+            </option>
+            {% endfor %}
+        </select>
+    </label>
+    
+
+    <label>
+      Body Part Afflicted:
+      <input type="text" name="body_part_afflicted" value="{{ incident.body_part_afflicted or '' }}">
+    </label>
+
+    <label>
       Summary:
-      <textarea name="incident_summary">{{ incident.incident_summary or '' }}</textarea>
+        <textarea name="incident_summary" rows="8" style="width:100%;">{{ incident.incident_summary or '' }}</textarea>
+    </label>
+
+    <label>
+      Witness:
+      <input type="text" name="witness" value="{{ incident.witness or '' }}">
+    </label>
+
+    <label>
+      Witness Phone Number:
+      <input type="text" name="witness_phone" value="{{ incident.witness_phone or '' }}">
     </label>
 
     <button type="submit">Confirm & Submit</button>
