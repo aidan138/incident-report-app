@@ -1,7 +1,8 @@
 import os
-from pdfrw import PdfReader, PdfWriter, PageMerge
+from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
+from app.models.incidents import Incident
 
 field_coords = {
     # Top section
@@ -10,7 +11,7 @@ field_coords = {
     "phone_number": (228, 129),
     "guest_of": (528, 129),
     "address": (228, 154),
-    "parent_guardian": (328, 180),b
+    "parent_guardian": (328, 180),
     "date_of_incident": (228, 232),
     "time_of_incident": (478, 232),
     "facility_name": (278, 258),
@@ -58,8 +59,8 @@ field_coords = {
     "witness_phone": (630, 130)
 }
 
-TEMPLATE_PDF = "./app/templates/Blank Incident Report (2)[35].pdf"
-OUTPUT_DIR = "/tmp"
+TEMPLATE_PDF = "./app/templates/Fillable Blank Incident Report (2)[35].pdf"
+OUTPUT_DIR = "./app/tmp"
 
 field_coords = {
     "person_involved_name": (278, 103),
@@ -101,43 +102,30 @@ field_coords = {
     "witness_phone": (630, 130),
 }
 
-def _make_overlay(incident, overlay_path):
-    """Create a transparent overlay PDF with text placed at coordinates."""
-    c = canvas.Canvas(overlay_path, pagesize=letter)
 
-    for field, coords in field_coords.items():
-        if not coords:
-            continue
-        value = getattr(incident, field, None)
-        if not value:
-            continue
+def generate_pdf(incident: Incident) -> str:
+    """Generate a incident report pdf and return its local filepath"""
+    output_path = os.path.join(OUTPUT_DIR, f"incident_{incident.pk}.pdf")
+    reader = PdfReader(TEMPLATE_PDF)
+    writer = PdfWriter()
 
-        x, y = coords
+    writer.append(reader)
+    writer.set_need_appearances_writer(True)
 
-        # Handle yes/no fields as checkboxes
-        if field.startswith("was_") or field.startswith("injury_"):
-            if str(value).lower() in ["yes", "true", "1", "x", "checked"]:
-                c.drawString(x, y, "X")
-        else:
-            # Draw normal text
-            c.drawString(x, y, str(value))
+    data = _get_incident_dict(incident)
+    writer.update_page_form_field_values(
+        page=None,                 # None = all pages (per docs)
+        fields=data,
+        auto_regenerate=False,     # leave to viewers; we already set NeedAppearances
+        flatten=False              # set True if you want to burn the text in (see below)
+    )
 
-    c.save()
+    with open(output_path, "wb") as f:
+        writer.write(f)
 
-def generate_pdf(incident):
-    overlay_path = os.path.join(OUTPUT_DIR, f"incident_{incident.id}_overlay.pdf")
-    output_path = os.path.join(OUTPUT_DIR, f"incident_{incident.id}.pdf")
-
-    # Make overlay
-    _make_overlay(incident, overlay_path)
-
-    # Merge with background
-    template_pdf = PdfReader(TEMPLATE_PDF)
-    overlay_pdf = PdfReader(overlay_path)
-
-    for page, overlay in zip(template_pdf.pages, overlay_pdf.pages):
-        merger = PageMerge(page)
-        merger.add(overlay).render()
-
-    PdfWriter().write(output_path, template_pdf)
     return output_path
+
+def _get_incident_dict(incident: Incident):
+    data = incident.to_dict()
+    data["date_of_report"] = data["created"].date()
+    return data

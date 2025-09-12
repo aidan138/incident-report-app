@@ -5,24 +5,24 @@ from typing import Optional, Literal
 from enum import Enum
 
 class TypeOfIncident(Enum):
-    FirstAid = "first_aid"
-    Altercation = "altercation"
-    Rescue = "rescue"
-    Other = "other"
+    FirstAid = "FirstAid"
+    Altercation = "Altercation"
+    Rescue = "Rescue"
+    Other = "Other"
 
 class TypeofInjury(Enum):
-    Splinter = "splinter"
-    Burn = "burn"
-    HeatRelatedIllness = "heat_related_illness"
-    BumpBruise = "bump_bruise"
-    DentalInjury = "dental_injury"
-    HeadNeckSpinalInjury = "head_neck_spinal_injury"
-    AnimalBiteSting = "animal_bite_sting"
-    Stroke = "stroke"
-    Choking = "choking"
-    CutScrape = "cut_scrape"
-    HeartAttack = "heart_attack"
-    Other = "other"
+    Splinter = "Splinter"
+    Burn = "Burn"
+    HeatRelatedIllness = "HeatRelatedIllness"
+    BumpBruise = "BumpBruise"
+    DentalInjury = "DentalInjury"
+    HeadNeckSpinalInjury = "HeadNeckSpinalInjury"
+    AnimalBiteSting = "AnimalBiteSting"
+    Stroke = "Stroke"
+    Choking = "Choking"
+    CutScrape = "CutScrape"
+    HeartAttack = "HeartAttack"
+    Other = "Other"
 
 class LifeguardPayload(BaseModel):
     name: str = Field(min_length=1)

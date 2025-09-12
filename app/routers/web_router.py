@@ -37,7 +37,7 @@ async def confirm_incident(request: Request, incident_id: str, db: AsyncSession 
     await db.commit()
     await db.refresh(incident)
 
-    # pdf_path = await generate_pdf(incident)
+    pdf_path = generate_pdf(incident)
     
     return {"status": "ok", "message": "Incident confirmed and sent"}
 
