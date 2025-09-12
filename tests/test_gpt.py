@@ -1,6 +1,6 @@
 import pytest
 from app.services.gpt import extract_incident_info, generate_incident_followups
-from app.schemas.schemas import IncidentSummary
+from app.schemas.incident_schemas import IncidentSummary
 import logging
 
 logging.basicConfig(level=logging.INFO, force=True)

@@ -1,4 +1,4 @@
-from app.schemas import schemas
+from app.schemas import incident_schemas
 from app.models import incidents
 
 
@@ -42,6 +42,6 @@ def test_sample_missing_fields():
     "events_leading_up": "Running on gym floor, slipped on wet spot",
 }
     incident = incidents.Incident(**kwargs)
-    missing_fields = schemas.Incident.model_validate(incident).missing_fields
+    missing_fields = incident_schemas.Incident.model_validate(incident).missing_fields
     assert len(missing_fields) == 1
     assert ["allergies"] == missing_fields

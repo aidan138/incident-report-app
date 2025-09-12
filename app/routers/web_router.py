@@ -4,7 +4,7 @@ from app.db import get_db
 from app.models.incidents import Incident as ORMIncident
 from fastapi.templating import Jinja2Templates
 from app.services.pdf import generate_pdf, email_pdf
-from app.schemas.schemas import TypeOfIncident, TypeofInjury
+from app.schemas.incident_schemas import TypeOfIncident, TypeofInjury
 from app.config import settings
 
 templates = Jinja2Templates(directory="app/templates")
@@ -46,6 +46,6 @@ async def confirm_incident(request: Request, incident_id: str, db: AsyncSession 
         body=f"Incident report for incident #{incident.pk}",
         pdf_path=pdf_path
     )
-    
+
     return {"status": "ok", "message": "Incident confirmed and sent"}
 

@@ -62,7 +62,6 @@ async def email_pdf(
         pdf_path: str
 ):
     
-
     msg = MessageSchema(
         subject=subject,
         recipients=[recipient],

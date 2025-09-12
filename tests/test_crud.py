@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.crud import crud  
 from app.models import portal, incidents
-from app.schemas import schemas
+from app.schemas import incident_schemas
 
 
 # @pytest.mark.asyncio

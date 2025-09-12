@@ -16,7 +16,8 @@ If information is not explicitly provided, infer reasonable defaults.
 - If medical attention was minor (e.g. band-aid), assume no security, law, or ambulance.
 - If a body part is mentioned (e.g. "right arm cut"), extract it.
 - If not mentioned, leave it as "" (empty string).  
-- Use "yes" or "no" for boolean fields.  
+- Use "YES" or "NO" for boolean fields.
+- For `location_of_incident`: extract where inside the facility the incident occurred (e.g. "staircase", "kids pool", "locker room"). If the location is not mentioned, leave it as "" (empty string).
 
 Return ONLY valid JSON, no explanations."""
 

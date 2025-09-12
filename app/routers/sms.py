@@ -5,7 +5,7 @@ from app.services.twilio import send_sms
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.crud import crud
-from app.schemas import schemas
+from app.schemas import incident_schemas
 from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
 import re
@@ -123,7 +123,7 @@ async def handle_summary(db, incident, message):
     await crud.update_incident_fields(db=db, incident_pk=incident.pk, fields_to_values=incident_summary.model_dump() | dict(incident_summary=message))
     await db.refresh(incident)
     logging.info(f"Incident orm model after updating {incident}")
-    missing_fields = schemas.Incident.model_validate(incident).missing_fields
+    missing_fields = incident_schemas.Incident.model_validate(incident).missing_fields
     logging.info(f"Found the following missing fields from summary: {missing_fields}")
     if not missing_fields:
         incident.state = "done"
