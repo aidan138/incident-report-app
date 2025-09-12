@@ -3,8 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.models.incidents import Incident as ORMIncident
 from fastapi.templating import Jinja2Templates
-from app.services.pdf import generate_pdf
+from app.services.pdf import generate_pdf, email_pdf
 from app.schemas.schemas import TypeOfIncident, TypeofInjury
+from app.config import settings
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(prefix="/incident", tags=["Web Incident Review"])
@@ -38,6 +39,13 @@ async def confirm_incident(request: Request, incident_id: str, db: AsyncSession 
     await db.refresh(incident)
 
     pdf_path = generate_pdf(incident)
+    
+    await email_pdf(
+        recipient=settings.mail_from,
+        subject=f"Incident #{incident.pk}",
+        body=f"Incident report for incident #{incident.pk}",
+        pdf_path=pdf_path
+    )
     
     return {"status": "ok", "message": "Incident confirmed and sent"}
 

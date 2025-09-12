@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     twilio_number: str = ""
     test_number: str = ""
     openai_model: str = ""
+    mail_username: str = ""
+    mail_password: str = ""
+    mail_server: str = ""
+    mail_from: str = ""
+    mail_port: int = -1
+
+    test_mail: str = ""
+
 
     class Config:
         env_file = ENV_PATH
