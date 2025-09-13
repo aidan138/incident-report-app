@@ -71,7 +71,7 @@ def generate_pdf(incident: Incident) -> str:
 
 def _get_incident_dict(incident: Incident):
     data = incident.to_dict()
-    data["date_of_report"] = data["created"].date()
+    data["date_of_report"] = data["created"].strftime("%m/%d/%Y")
     summary = data["incident_summary"]
 
     # Iterate through checkboxes
