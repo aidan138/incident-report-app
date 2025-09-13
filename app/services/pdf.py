@@ -21,7 +21,7 @@ conn = ConnectionConfig(
 TEMPLATE_PDF = "./app/templates/Fillable Blank Incident Report (2)[35].pdf"
 OUTPUT_DIR = "./app/tmp"
 
-SUMMARY_LINE_LENGTH = 125
+SUMMARY_LINE_LENGTH = 88
 CHECKBOX_MAPPING = {
     "type_of_injury" : {
         'Splinter': 'injury_splinter',
