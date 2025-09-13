@@ -10,7 +10,7 @@ from pydantic import create_model, BaseModel
 client = AsyncOpenAI(api_key=settings.openai_api_key)
 
 summary_extractor_prompt = """You are an assistant that extracts structured data from short incident reports.  
-Fill in the following JSON schema.  
+Fill in the following JSON schema and capitalize any strings where the format is not specified.  
 
 If information is not explicitly provided, infer reasonable defaults.  
 - If medical attention was minor (e.g. band-aid), assume no security, law, or ambulance.
