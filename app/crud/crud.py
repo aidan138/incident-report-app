@@ -3,8 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 from sqlalchemy.future import select
 from ..models import portal, incidents
-from ..schemas import incident_schemas, portal_schemas
-from typing import Iterable
+from ..schemas import portal_schemas
 
 
 async def get_lifeguard_by_phone(db: AsyncSession, phone: str) -> Optional[portal.Lifeguard]:
