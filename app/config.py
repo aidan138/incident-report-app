@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     mail_server: str = ""
     mail_from: str = ""
     mail_port: int = -1
+    root_url: str = ""
 
     test_mail: str = ""
 

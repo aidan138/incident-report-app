@@ -33,7 +33,7 @@ addr_pat = r"""
 pattern = re.compile(addr_pat, re.VERBOSE)
 date_lens = (2,2,4)
 fatal_server_response = "Incident reporting service currently down. Please perform handwritten incident reporting."
-DOMAIN_URL = "e95848e9a64f.ngrok-free.app"
+ROOT_URL = settings.root_url
 
 @router.post('/incident')
 async def handle_incident_report(
@@ -130,7 +130,7 @@ async def handle_summary(db, incident, message):
         await db.commit()
         incident_id = incident.pk
         return f"""Your incident report is ready for review. Please confirm your report here:
-{DOMAIN_URL}/incident/{incident_id}/review"""
+https://{ROOT_URL}/incident/{incident_id}/review"""
 
     follow_ups = await generate_incident_followups(model=settings.openai_model, missing_fields=missing_fields)
     logging.info(f"Generated the follow-ups: {follow_ups}")
@@ -161,7 +161,7 @@ async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
         await db.commit()
 
         return f"""Your incident report is ready for review. Please confirm your report here:
-https://{DOMAIN_URL}/incident/{incident_id}/review""" # TODO Change to domain url in production
+https://{ROOT_URL}/incident/{incident_id}/review"""
     
     # Get the next question and update the incidents current state
     next_field, next_question = next(iter(followups.items()))
