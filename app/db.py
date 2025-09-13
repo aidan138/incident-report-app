@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import (
 
 from app.config import settings
 
+raw =settings.database_url
+if raw.startswith("postgresql://"):
+    raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     engine = create_async_engine(settings.database_url, echo=True) # Creates a database engine TODO Remove echo in production
