@@ -13,7 +13,7 @@ if raw.startswith("postgresql://"):
     raw = raw.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    engine = create_async_engine(settings.database_url, echo=True) # Creates a database engine TODO Remove echo in production
+    engine = create_async_engine(raw, echo=True) # Creates a database engine TODO Remove echo in production
     factory = async_sessionmaker(engine)
     async with factory() as session:
         try:
