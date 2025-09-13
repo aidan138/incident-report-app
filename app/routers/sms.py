@@ -154,7 +154,7 @@ async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
 
     # Handle running out of followups
     if not followups:
-        # incident.state = "done"
+        incident.state = "done"
         incident.followups = {}
         incident_id = incident.pk  # Access inside session
 
