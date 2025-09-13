@@ -1,7 +1,7 @@
 from openai import AsyncOpenAI, RateLimitError, OpenAIError, APIError, APITimeoutError
 from app.config import settings
 from fastapi import HTTPException
-from app.schemas.schemas import IncidentSummary
+from app.schemas.incident_schemas import IncidentSummary
 import logging
 import asyncio
 from pydantic import create_model, BaseModel

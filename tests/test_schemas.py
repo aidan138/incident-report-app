@@ -30,7 +30,7 @@ def test_sample_missing_fields():
     "type_of_injury": "bump_bruise",
     "was_employee_involved": "no",
     "was_security_contacted": "yes",
-    "was_law_contacted": "no",
+    "was_911_contacted": "no",
     "was_transported_ambulance": "yes",
     "ambulance_to_where": "City Hospital",
 

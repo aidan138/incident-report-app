@@ -110,6 +110,8 @@
       <input type="text" name="ambulance_to_where" value="{{ incident.ambulance_to_where or '' }}">
     </label>
 
+    
+
 
     <label>
         Type of Incident:
@@ -121,6 +123,11 @@
             </option>
             {% endfor %}
         </select>
+    </label>
+
+    <label>
+      Where in the facility did the Incident Occur? (Be Specific):
+      <input type="text" name="location_of_incident" value="{{ incident.location_of_incident or '' }}">
     </label>
 
     <label>

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import update
 from sqlalchemy.future import select
 from ..models import portal, incidents
-from ..schemas import incident_schemas
+from ..schemas import incident_schemas, portal_schemas
 from typing import Iterable
 
 
@@ -12,7 +12,7 @@ async def get_lifeguard_by_phone(db: AsyncSession, phone: str) -> Optional[porta
     scalars = await q.scalars()
     return await scalars.first()
 
-async def create_lifeguard(db: AsyncSession, lifeguard: incident_schemas.Lifeguard) -> portal.Lifeguard:
+async def create_lifeguard(db: AsyncSession, lifeguard: portal_schemas.Lifeguard) -> portal.Lifeguard:
     new_lg = portal.Lifeguard(**lifeguard.model_dump()) # Directly maps schema to model
     db.add(new_lg)
     await db.commit()

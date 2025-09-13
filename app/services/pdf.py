@@ -6,6 +6,7 @@ from app.models.incidents import Incident
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from app.config import settings
 import textwrap
+import logging
 
 conn = ConnectionConfig(
     MAIL_USERNAME=settings.mail_username,
@@ -22,6 +23,28 @@ TEMPLATE_PDF = "./app/templates/Fillable Blank Incident Report (2)[35].pdf"
 OUTPUT_DIR = "./app/tmp"
 
 SUMMARY_LINE_LENGTH = 125
+CHECKBOX_MAPPING = {
+    "type_of_injury" : {
+        'Splinter': 'injury_splinter',
+        'Burn' : 'injury_burn',
+        'HeatRelatedIllness': 'injury_heat',
+        'BumpBruise' : 'injury_bump',
+        'DentalInjury' : 'injury_dental',
+        'HeadNeckSpinalInjury' : 'injury_head_neck',
+        'AnimalBiteSting' : 'injury_animal_bite',
+        'Stroke' : 'injury_stroke',
+        'Choking' : 'injury_choking',
+        'CutScrape' : 'injury_cut',
+        'HeartAttack' : 'injury_heart',
+        'Other' : 'injury_other',
+    },
+    "type_of_incident": {
+        'FirstAid': 'incident_first_aid',
+        'Altercation': 'incident_altercation',
+        'Rescue': 'incident_rescue',
+        'Other': 'incident_other',
+    },
+}
 
 
 def generate_pdf(incident: Incident) -> str:
@@ -50,7 +73,16 @@ def _get_incident_dict(incident: Incident):
     data = incident.to_dict()
     data["date_of_report"] = data["created"].date()
     summary = data["incident_summary"]
-    # chunk the summary
+
+    # Iterate through checkboxes
+    for enum, mapping in CHECKBOX_MAPPING.items():
+        field = data[enum].name
+        for value, field_name in mapping.items():
+
+            # Only mark checkbox if it is the one identified
+            data[field_name] = '/Yes' if  field == value else '/Off'
+
+    # chunk the summary text to meet line  length
     summary_list = textwrap.wrap(summary, SUMMARY_LINE_LENGTH)
     data["incident_summary"] = '\n'.join(summary_list)
     return data

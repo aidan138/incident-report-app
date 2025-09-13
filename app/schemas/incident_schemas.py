@@ -26,11 +26,12 @@ class IncidentSummary(BaseModel):
     body_part_afflicted: Optional[str] = None
     type_of_incident: TypeOfIncident
     type_of_injury: TypeofInjury
-    was_employee_involved: Optional[Literal["yes", "no"]] = None
-    was_security_contacted: Optional[Literal["yes", "no"]] = None
-    was_law_contacted: Optional[Literal["yes", "no"]] = None
-    was_transported_ambulance: Optional[Literal["yes", "no"]] = None
+    was_employee_involved: Optional[Literal["YES", "NO"]] = None
+    was_security_contacted: Optional[Literal["YES", "NO"]] = None
+    was_911_contacted: Optional[Literal["YES", "NO"]] = None
+    was_transported_ambulance: Optional[Literal["YES", "NO"]] = None
     ambulance_to_where: Optional[str] = None
+    location_of_incident: Optional[str] = None
     signs_symptoms: Optional[str] = None
     allergies: Optional[str] = None
     medications: Optional[str] = None
@@ -66,10 +67,10 @@ class Incident(BaseModel):
     body_part_afflicted: Optional[str] = None
     type_of_incident: TypeOfIncident
     type_of_injury: TypeofInjury
-    was_employee_involved: Optional[Literal["yes", "no"]] = None
-    was_security_contacted: Optional[Literal["yes", "no"]] = None
-    was_law_contacted: Optional[Literal["yes", "no"]] = None
-    was_transported_ambulance: Optional[Literal["yes", "no"]] = None
+    was_employee_involved: Optional[Literal["YES", "NO"]] = None
+    was_security_contacted: Optional[Literal["YES", "NO"]] = None
+    was_911_contacted: Optional[Literal["YES", "NO"]] = None
+    was_transported_ambulance: Optional[Literal["YES", "NO"]] = None
     ambulance_to_where: Optional[str] = None
     signs_symptoms: Optional[str] = None
     allergies: Optional[str] = None
@@ -97,7 +98,7 @@ class Incident(BaseModel):
                 "events_leading_up",
             ],
         ]
-        required_fields = []
+        required_fields = ['']
         if getattr(values, "was_transported_ambulance") == "yes":
             missing.append("ambulance_to_where")  
 

@@ -2,7 +2,7 @@ from sqlalchemy import String, Enum, JSON
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.ext.mutable import MutableDict
 from app.models.base import Base
-from app.schemas.schemas import TypeOfIncident, TypeofInjury
+from app.schemas.incident_schemas import TypeOfIncident, TypeofInjury
 
 
 
@@ -30,7 +30,7 @@ class Incident(Base):
 
     was_employee_involved: Mapped[str] = mapped_column(String, nullable=True) # yes or no
     was_security_contacted: Mapped[str] = mapped_column(String, nullable=True) # yes or no
-    was_law_contacted: Mapped[str] = mapped_column(String, nullable=True) # yes or no
+    was_911_contacted: Mapped[str] = mapped_column(String, nullable=True) # yes or no
     was_transported_ambulance: Mapped[str] = mapped_column(String, nullable=True)
     ambulance_to_where: Mapped[str] = mapped_column(String, nullable=True)
     type_of_incident: Mapped[TypeOfIncident] = mapped_column(Enum(TypeOfIncident, name="type_of_incident_enum", native_enum=False), nullable=True)

@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from app.crud import crud
-from app.schemas import incident_schemas
+from app.schemas import portal_schemas
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from app.db import get_db
 
 router = APIRouter()
 
-@router.get('/get-lifeguard-by-phone-{phone_num}', response_model=incident_schemas.Lifeguard)
+@router.get('/get-lifeguard-by-phone-{phone_num}', response_model=portal_schemas.Lifeguard)
 async def get_lifeguard_by_phone(phone: str, db: AsyncSession = Depends(get_db)):
     try:
         return await crud.get_lifeguard_by_phone(db, phone)
@@ -15,8 +15,8 @@ async def get_lifeguard_by_phone(phone: str, db: AsyncSession = Depends(get_db))
         raise HTTPException(status_code=500, detail=f"Failed to get lifeguard information from phone number {phone}")
     
 
-@router.post('/create-lifeguard/', response_model=incident_schemas.Lifeguard)
-async def create_lifeguard(lg: incident_schemas.LifeguardPayload, db: AsyncSession = Depends(get_db)):
+@router.post('/create-lifeguard/', response_model=portal_schemas.Lifeguard)
+async def create_lifeguard(lg: portal_schemas.LifeguardPayload, db: AsyncSession = Depends(get_db)):
     try:
         existing = await crud.get_lifeguard_by_phone(db, lg.phone)
     except SQLAlchemyError:
