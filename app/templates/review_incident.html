@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Review Incident Report</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 2em; 
+      line-height: 1.5;
+      color: #333;
+    }
+
+    h2 {
+      font-size: 1.8em;
+      margin-bottom: 0.5em;
+      color: #222;
+    }
+
+    form { 
+      display: flex; 
+      flex-direction: column; 
+      max-width: 700px; 
+    }
+
+    fieldset {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 1.2em;
+      margin-top: 1.5em;
+    }
+
+    legend {
+      font-weight: bold;
+      padding: 0 0.5em;
+      color: #007BFF;
+    }
+
+    label { 
+      margin-top: 1em; 
+      font-weight: bold; 
+      display: flex;
+      flex-direction: column;
+    }
+
+    .required::after {
+      content: " *";
+      color: red;
+    }
+
+    input, textarea, select { 
+      margin-top: 0.4em;
+      padding: 0.6em; 
+      font-size: 1em; 
+      border: 1px solid #ccc; 
+      border-radius: 4px; 
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button { 
+      margin-top: 2em; 
+      padding: 0.8em 1.2em; 
+      background: #007BFF; 
+      color: white; 
+      font-size: 1.1em;
+      border: none; 
+      border-radius: 4px;
+      cursor: pointer; 
+      transition: background 0.3s ease;
+    }
+
+    button:hover { 
+      background: #0056b3; 
+    }
+
+    .success { 
+      color: green; 
+      font-weight: bold;
+      margin-bottom: 1em;
+    }
+
+    .error { 
+      color: red; 
+      font-weight: bold;
+      margin-bottom: 1em;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>Review Incident Report</h2>
+
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+
+  {% if request.query_params.confirmed %}
+    <p class="success">✅ Incident confirmed and sent to manager!</p>
+  {% endif %}
+
+  <form method="post" action="{{ request.url.path.rsplit('/', 1)[0] }}/confirm">
+
+    <fieldset>
+      <legend>Employee Information</legend>
+      <label for="employee_completing_report" class="required">Employee Completing Report:
+        <input type="text" id="employee_completing_report" name="employee_completing_report" value="{{ incident.employee_completing_report or '' }}" placeholder="Full name of employee submitting report" required>
+      </label>
+      <label for="creator_phone" class="required">Employee Phone Number:
+        <input type="tel" id="creator_phone" name="creator_phone" value="{{ incident.creator_phone or '' }}" placeholder="e.g. (555) 123-4567" pattern="[0-9\-+\s()]*" required>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Person Involved</legend>
+      <label for="person_involved_name" class="required">Name:
+        <input type="text" id="person_involved_name" name="person_involved_name" value="{{ incident.person_involved_name or '' }}" placeholder="Full name of person involved" required>
+      </label>
+      <label for="person_involved_age">Age:
+        <input type="number" id="person_involved_age" name="person_involved_age" value="{{ incident.person_involved_age or '' }}" min="0" placeholder="Age in years">
+      </label>
+      <label for="person_involved_phone_number">Phone Number:
+        <input type="tel" id="person_involved_phone_number" name="person_involved_phone_number" value="{{ incident.person_involved_phone_number or '' }}" placeholder="e.g. (555) 987-6543" pattern="[0-9\-+\s()]*">
+      </label>
+      <label for="person_involved_guest_of">Guest Of:
+        <input type="text" id="person_involved_guest_of" name="person_involved_guest_of" value="{{ incident.person_involved_guest_of or '' }}" placeholder="If guest, name of host">
+      </label>
+      <label for="person_involved_address">Address:
+        <input type="text" id="person_involved_address" name="person_involved_address" value="{{ incident.person_involved_address or '' }}" placeholder="Street, City, State, ZIP">
+      </label>
+      <label for="person_involved_guardian">If minor, Parent/Guardian:
+        <input type="text" id="person_involved_guardian" name="person_involved_guardian" value="{{ incident.person_involved_guardian or '' }}" placeholder="Parent/guardian full name">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Incident Details</legend>
+      <label for="date_of_incident" class="required">Date of Incident:
+        <input type="date" id="date_of_incident" name="date_of_incident" value="{{ incident.date_of_incident or '' }}" required>
+      </label>
+      <label for="time_of_incident" class="required">Time of Incident:
+        <input type="time" id="time_of_incident" name="time_of_incident" value="{{ incident.time_of_incident or '' }}" required>
+      </label>
+      <label for="facility_name" class="required">Facility Name:
+        <input type="text" id="facility_name" name="facility_name" value="{{ incident.facility_name or '' }}" placeholder="e.g. Main Recreation Center" required>
+      </label>
+      <label for="incident_address">Address of Incident:
+        <input type="text" id="incident_address" name="incident_address" value="{{ incident.incident_address or '' }}" placeholder="Street, City, State, ZIP">
+      </label>
+
+      <label class="required">Employee Involved:
+        <div>
+          <label>
+            <input type="radio" name="was_employee_involved" value="YES"
+              {% if incident.was_employee_involved == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_employee_involved" value="NO"
+              {% if incident.was_employee_involved == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
+      </label>
+
+      <label class="required">Was Security Contacted?:
+        <div>
+          <label>
+            <input type="radio" name="was_security_contacted" value="YES"
+              {% if incident.was_security_contacted == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_security_contacted" value="NO"
+              {% if incident.was_security_contacted == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
+      </label>
+
+      <label class="required">Was 911 Called?:
+        <div>
+          <label>
+            <input type="radio" name="was_law_contacted" value="YES"
+              {% if incident.was_law_contacted == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_law_contacted" value="NO"
+              {% if incident.was_law_contacted == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
+      </label>
+
+      <label class="required">Transported by Ambulance?:
+        <div>
+          <label>
+            <input type="radio" name="was_transported_ambulance" value="YES"
+              {% if incident.was_transported_ambulance == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_transported_ambulance" value="NO"
+              {% if incident.was_transported_ambulance == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
+      </label>
+
+
+      <label for="ambulance_to_where" id="ambulance_label">If yes, to where?:
+        <input type="text" id="ambulance_to_where" name="ambulance_to_where" value="{{ incident.ambulance_to_where or '' }}" placeholder="Hospital/medical facility name">
+      </label>
+
+      <label for="type_of_incident" class="required">Type of Incident:
+        <select id="type_of_incident" name="type_of_incident" required>
+          {% for option in TypeOfIncident %}
+          <option value="{{ option.value }}"
+            {% if incident.type_of_incident.value == option.value %}selected{% endif %}>
+            {{ option.name.replace('_', ' ') }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label for="incident_other_exp" id="incident_other_label" class="hidden">Other Explanation:
+        <input type="text" id="incident_other_exp" name="incident_other_exp" value="{{ incident.incident_other_exp or '' }}" placeholder="Describe other type of incident">
+      </label>
+
+      <label for="location_of_incident">Location in Facility:
+        <input type="text" id="location_of_incident" name="location_of_incident" value="{{ incident.location_of_incident or '' }}" placeholder="Be specific (e.g. Gym, Pool Deck, Parking Lot)">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Medical Information</legend>
+      <label for="signs_symptoms">Signs & Symptoms:
+        <input type="text" id="signs_symptoms" name="signs_symptoms" value="{{ incident.signs_symptoms or '' }}" placeholder="Observed signs or symptoms">
+      </label>
+      <label for="allergies">Allergies:
+        <input type="text" id="allergies" name="allergies" value="{{ incident.allergies or '' }}" placeholder="Known allergies">
+      </label>
+      <label for="medications">Medications:
+        <input type="text" id="medications" name="medications" value="{{ incident.medications or '' }}" placeholder="Current medications">
+      </label>
+      <label for="past_history">Past History:
+        <input type="text" id="past_history" name="past_history" value="{{ incident.past_history or '' }}" placeholder="Relevant past medical history">
+      </label>
+      <label for="last_food_drink">Last Food/Drink:
+        <input type="text" id="last_food_drink" name="last_food_drink" value="{{ incident.last_food_drink or '' }}" placeholder="Last meal or beverage consumed">
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Injury Details</legend>
+      <label for="events_leading_up">Events Leading Up:
+        <textarea id="events_leading_up" name="events_leading_up" placeholder="Describe events leading to the incident">{{ incident.events_leading_up or '' }}</textarea>
+      </label>
+      <label for="type_of_injury" class="required">Type of Injury:
+        <select id="type_of_injury" name="type_of_injury" required>
+          {% for option in TypeOfInjury %}
+          <option value="{{ option.value }}"
+            {% if incident.type_of_injury.value == option.value %}selected{% endif %}>
+            {{ option.name.replace('_', ' ') }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label for="injury_other_exp" id="injury_other_label" class="hidden">Other Explanation:
+        <input type="text" id="injury_other_exp" name="injury_other_exp" value="{{ incident.injury_other_exp or '' }}" placeholder="Describe other type of injury">
+      </label>
+      <label for="body_part_afflicted">Body Part Afflicted:
+        <input type="text" id="body_part_afflicted" name="body_part_afflicted" value="{{ incident.body_part_afflicted or '' }}" placeholder="e.g. Left arm, right ankle">
+      </label>
+      <label for="incident_summary" class="required">Summary:
+        <textarea id="incident_summary" name="incident_summary" rows="8" style="width:100%;" placeholder="Provide a detailed summary of the incident" required>{{ incident.incident_summary or '' }}</textarea>
+      </label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Witness Information</legend>
+      <label for="witness">Witness Name:
+        <input type="text" id="witness" name="witness" value="{{ incident.witness or '' }}" placeholder="Full name of witness">
+      </label>
+      <label for="witness_phone">Witness Phone Number:
+        <input type="tel" id="witness_phone" name="witness_phone" value="{{ incident.witness_phone or '' }}" placeholder="e.g. (555) 222-3333" pattern="[0-9\-+\s()]*">
+      </label>
+    </fieldset>
+
+    <button type="submit">Confirm & Submit</button>
+  </form>
+
+<script>
+  function toggleOther(selectId, labelId) {
+    const select = document.getElementById(selectId);
+    const label = document.getElementById(labelId);
+    if (select && label) {
+      if (select.value.toLowerCase() === "other") {
+        label.classList.remove("hidden");
+      } else {
+        label.classList.add("hidden");
+      }
+    }
+  }
+
+  function toggleAmbulance() {
+    const yesOption = document.querySelector('input[name="was_transported_ambulance"][value="YES"]');
+    const noOption = document.querySelector('input[name="was_transported_ambulance"][value="NO"]');
+    const ambulanceLabel = document.getElementById("ambulance_label");
+
+    if (yesOption && ambulanceLabel) {
+      if (yesOption.checked) {
+        ambulanceLabel.classList.remove("hidden");
+      } else {
+        ambulanceLabel.classList.add("hidden");
+      }
+    }
+
+    // Add change listeners so it updates live
+    if (yesOption) yesOption.addEventListener("change", toggleAmbulance);
+    if (noOption) noOption.addEventListener("change", toggleAmbulance);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const incidentSelect = document.getElementById("type_of_incident");
+    const injurySelect = document.getElementById("type_of_injury");
+
+    if (incidentSelect) {
+      incidentSelect.addEventListener("change", () => toggleOther("type_of_incident", "incident_other_label"));
+      toggleOther("type_of_incident", "incident_other_label");
+    }
+
+    if (injurySelect) {
+      injurySelect.addEventListener("change", () => toggleOther("type_of_injury", "injury_other_label"));
+      toggleOther("type_of_injury", "injury_other_label");
+    }
+
+    // Run ambulance toggle logic
+    toggleAmbulance();
+  });
+</script>
+</body>
+</html>

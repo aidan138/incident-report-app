@@ -1,5 +1,5 @@
 from uuid import UUID
-from pydantic import BaseModel, NaiveDatetime, Field
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 from datetime import datetime
 
 
@@ -15,7 +15,6 @@ class Lifeguard(LifeguardPayload):
     class Config:
         from_attributes = True
 
-
 class Region(BaseModel):
     id: UUID
     name: str = Field(min_length=1)
@@ -30,4 +29,3 @@ class Manager(BaseModel):
 
     class Config:
         from_attributes = True
-    
