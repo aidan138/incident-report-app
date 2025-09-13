@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI
 from app.routers import portal, sms, web_router
 from app.core.exceptions import register_exceptions

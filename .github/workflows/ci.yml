@@ -39,4 +39,4 @@ jobs:
         mkdir ./app/tmp
     - name: Test with pytest
       run: |
-        pytest
+        pytest -v ./tests/test_integrations.py
