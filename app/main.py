@@ -14,8 +14,6 @@ app.include_router(web_router.router)
 
 register_exceptions(app=app)
 
-os.makedirs("./app/tmp", exist_ok=True)
-
 @app.get("/")
 async def root() -> dict[str, str]:
     return {"Hello": "World"}
