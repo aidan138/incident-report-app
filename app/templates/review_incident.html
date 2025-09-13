@@ -90,6 +90,21 @@
     .hidden {
       display: none;
     }
+
+    .radio-inline {
+      display: flex;
+      gap: 1.5em;  /* space between Yes and No */
+      align-items: center;
+    }
+
+    .radio-inline label {
+      font-weight: normal; /* don’t make Yes/No bold */
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+    }
+
   </style>
 </head>
 <body>
@@ -153,7 +168,7 @@
       </label>
 
       <label class="required">Employee Involved:
-        <div>
+        <div class="radio-inline">
           <label>
             <input type="radio" name="was_employee_involved" value="YES"
               {% if incident.was_employee_involved == 'YES' %}checked{% endif %} required> Yes
@@ -166,7 +181,7 @@
       </label>
 
       <label class="required">Was Security Contacted?:
-        <div>
+        <div class="radio-inline">
           <label>
             <input type="radio" name="was_security_contacted" value="YES"
               {% if incident.was_security_contacted == 'YES' %}checked{% endif %} required> Yes
@@ -179,7 +194,7 @@
       </label>
 
       <label class="required">Was 911 Called?:
-        <div>
+        <div class="radio-inline">
           <label>
             <input type="radio" name="was_911_contacted" value="YES"
               {% if incident.was_911_contacted == 'YES' %}checked{% endif %} required> Yes
@@ -192,7 +207,7 @@
       </label>
 
       <label class="required">Transported by Ambulance?:
-        <div>
+        <div class="radio-inline">
           <label>
             <input type="radio" name="was_transported_ambulance" value="YES"
               {% if incident.was_transported_ambulance == 'YES' %}checked{% endif %} required> Yes
