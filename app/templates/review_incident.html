@@ -42,6 +42,11 @@
       flex-direction: column;
     }
 
+    .required::after {
+      content: " *";
+      color: red;
+    }
+
     input, textarea, select { 
       margin-top: 0.4em;
       padding: 0.6em; 
@@ -81,6 +86,10 @@
       font-weight: bold;
       margin-bottom: 1em;
     }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -98,67 +107,110 @@
 
     <fieldset>
       <legend>Employee Information</legend>
-      <label>Employee Completing Report:
-        <input type="text" name="employee_completing_report" value="{{ incident.employee_completing_report or '' }}">
+      <label for="employee_completing_report" class="required">Employee Completing Report:
+        <input type="text" id="employee_completing_report" name="employee_completing_report" value="{{ incident.employee_completing_report or '' }}" placeholder="Full name of employee submitting report" required>
       </label>
-      <label>Employee Phone Number:
-        <input type="text" name="creator_phone" value="{{ incident.creator_phone or '' }}">
+      <label for="creator_phone" class="required">Employee Phone Number:
+        <input type="tel" id="creator_phone" name="creator_phone" value="{{ incident.creator_phone or '' }}" placeholder="e.g. (555) 123-4567" pattern="[0-9\-+\s()]*" required>
       </label>
     </fieldset>
 
     <fieldset>
       <legend>Person Involved</legend>
-      <label>Name:
-        <input type="text" name="person_involved_name" value="{{ incident.person_involved_name or '' }}">
+      <label for="person_involved_name" class="required">Name:
+        <input type="text" id="person_involved_name" name="person_involved_name" value="{{ incident.person_involved_name or '' }}" placeholder="Full name of person involved" required>
       </label>
-      <label>Age:
-        <input type="text" name="person_involved_age" value="{{ incident.person_involved_age or '' }}">
+      <label for="person_involved_age">Age:
+        <input type="number" id="person_involved_age" name="person_involved_age" value="{{ incident.person_involved_age or '' }}" min="0" placeholder="Age in years">
       </label>
-      <label>Phone Number:
-        <input type="text" name="person_involved_phone_number" value="{{ incident.person_involved_phone_number or '' }}">
+      <label for="person_involved_phone_number">Phone Number:
+        <input type="tel" id="person_involved_phone_number" name="person_involved_phone_number" value="{{ incident.person_involved_phone_number or '' }}" placeholder="e.g. (555) 987-6543" pattern="[0-9\-+\s()]*">
       </label>
-      <label>Guest Of:
-        <input type="text" name="person_involved_guest_of" value="{{ incident.person_involved_guest_of or '' }}">
+      <label for="person_involved_guest_of">Guest Of:
+        <input type="text" id="person_involved_guest_of" name="person_involved_guest_of" value="{{ incident.person_involved_guest_of or '' }}" placeholder="If guest, name of host">
       </label>
-      <label>Address:
-        <input type="text" name="person_involved_address" value="{{ incident.person_involved_address or '' }}">
+      <label for="person_involved_address">Address:
+        <input type="text" id="person_involved_address" name="person_involved_address" value="{{ incident.person_involved_address or '' }}" placeholder="Street, City, State, ZIP">
       </label>
-      <label>If minor, Parent/Guardian:
-        <input type="text" name="person_involved_guardian" value="{{ incident.person_involved_guardian or '' }}">
+      <label for="person_involved_guardian">If minor, Parent/Guardian:
+        <input type="text" id="person_involved_guardian" name="person_involved_guardian" value="{{ incident.person_involved_guardian or '' }}" placeholder="Parent/guardian full name">
       </label>
     </fieldset>
 
     <fieldset>
       <legend>Incident Details</legend>
-      <label>Date of Incident:
-        <input type="text" name="date_of_incident" value="{{ incident.date_of_incident or '' }}">
+      <label for="date_of_incident" class="required">Date of Incident:
+        <input type="date" id="date_of_incident" name="date_of_incident" value="{{ incident.date_of_incident or '' }}" required>
       </label>
-      <label>Time of Incident:
-        <input type="text" name="time_of_incident" value="{{ incident.time_of_incident or '' }}">
+      <label for="time_of_incident" class="required">Time of Incident:
+        <input type="time" id="time_of_incident" name="time_of_incident" value="{{ incident.time_of_incident or '' }}" required>
       </label>
-      <label>Facility Name:
-        <input type="text" name="facility_name" value="{{ incident.facility_name or '' }}">
+      <label for="facility_name" class="required">Facility Name:
+        <input type="text" id="facility_name" name="facility_name" value="{{ incident.facility_name or '' }}" placeholder="e.g. Main Recreation Center" required>
       </label>
-      <label>Address of Incident:
-        <input type="text" name="incident_address" value="{{ incident.incident_address or '' }}">
+      <label for="incident_address">Address of Incident:
+        <input type="text" id="incident_address" name="incident_address" value="{{ incident.incident_address or '' }}" placeholder="Street, City, State, ZIP">
       </label>
-      <label>Employee Involved:
-        <input type="text" name="was_employee_involved" value="{{ incident.was_employee_involved or '' }}">
+
+      <label class="required">Employee Involved:
+        <div>
+          <label>
+            <input type="radio" name="was_employee_involved" value="YES"
+              {% if incident.was_employee_involved == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_employee_involved" value="NO"
+              {% if incident.was_employee_involved == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
       </label>
-      <label>Was Security Contacted?:
-        <input type="text" name="was_security_contacted" value="{{ incident.was_security_contacted or '' }}">
+
+      <label class="required">Was Security Contacted?:
+        <div>
+          <label>
+            <input type="radio" name="was_security_contacted" value="YES"
+              {% if incident.was_security_contacted == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_security_contacted" value="NO"
+              {% if incident.was_security_contacted == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
       </label>
-      <label>Was 911 Called?:
-        <input type="text" name="was_law_contacted" value="{{ incident.was_law_contacted or '' }}">
+
+      <label class="required">Was 911 Called?:
+        <div>
+          <label>
+            <input type="radio" name="was_law_contacted" value="YES"
+              {% if incident.was_law_contacted == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_law_contacted" value="NO"
+              {% if incident.was_law_contacted == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
       </label>
-      <label>Transported by Ambulance?:
-        <input type="text" name="was_transported_ambulance" value="{{ incident.was_transported_ambulance or '' }}">
+
+      <label class="required">Transported by Ambulance?:
+        <div>
+          <label>
+            <input type="radio" name="was_transported_ambulance" value="YES"
+              {% if incident.was_transported_ambulance == 'YES' %}checked{% endif %} required> Yes
+          </label>
+          <label>
+            <input type="radio" name="was_transported_ambulance" value="NO"
+              {% if incident.was_transported_ambulance == 'NO' %}checked{% endif %}> No
+          </label>
+        </div>
       </label>
-      <label>If yes, to where?:
-        <input type="text" name="ambulance_to_where" value="{{ incident.ambulance_to_where or '' }}">
+
+
+      <label for="ambulance_to_where" id="ambulance_label">If yes, to where?:
+        <input type="text" id="ambulance_to_where" name="ambulance_to_where" value="{{ incident.ambulance_to_where or '' }}" placeholder="Hospital/medical facility name">
       </label>
-      <label>Type of Incident:
-        <select name="type_of_incident">
+
+      <label for="type_of_incident" class="required">Type of Incident:
+        <select id="type_of_incident" name="type_of_incident" required>
           {% for option in TypeOfIncident %}
           <option value="{{ option.value }}"
             {% if incident.type_of_incident.value == option.value %}selected{% endif %}>
@@ -167,40 +219,42 @@
           {% endfor %}
         </select>
       </label>
-      <label>Other Explanation:
-        <input type="text" name="incident_other_exp" value="{{ incident.incident_other_exp or '' }}">
+
+      <label for="incident_other_exp" id="incident_other_label" class="hidden">Other Explanation:
+        <input type="text" id="incident_other_exp" name="incident_other_exp" value="{{ incident.incident_other_exp or '' }}" placeholder="Describe other type of incident">
       </label>
-      <label>Location in Facility:
-        <input type="text" name="location_of_incident" value="{{ incident.location_of_incident or '' }}">
+
+      <label for="location_of_incident">Location in Facility:
+        <input type="text" id="location_of_incident" name="location_of_incident" value="{{ incident.location_of_incident or '' }}" placeholder="Be specific (e.g. Gym, Pool Deck, Parking Lot)">
       </label>
     </fieldset>
 
     <fieldset>
       <legend>Medical Information</legend>
-      <label>Signs & Symptoms:
-        <input type="text" name="signs_symptoms" value="{{ incident.signs_symptoms or '' }}">
+      <label for="signs_symptoms">Signs & Symptoms:
+        <input type="text" id="signs_symptoms" name="signs_symptoms" value="{{ incident.signs_symptoms or '' }}" placeholder="Observed signs or symptoms">
       </label>
-      <label>Allergies:
-        <input type="text" name="allergies" value="{{ incident.allergies or '' }}">
+      <label for="allergies">Allergies:
+        <input type="text" id="allergies" name="allergies" value="{{ incident.allergies or '' }}" placeholder="Known allergies">
       </label>
-      <label>Medications:
-        <input type="text" name="medications" value="{{ incident.medications or '' }}">
+      <label for="medications">Medications:
+        <input type="text" id="medications" name="medications" value="{{ incident.medications or '' }}" placeholder="Current medications">
       </label>
-      <label>Past History:
-        <input type="text" name="past_history" value="{{ incident.past_history or '' }}">
+      <label for="past_history">Past History:
+        <input type="text" id="past_history" name="past_history" value="{{ incident.past_history or '' }}" placeholder="Relevant past medical history">
       </label>
-      <label>Last Food/Drink:
-        <input type="text" name="last_food_drink" value="{{ incident.last_food_drink or '' }}">
+      <label for="last_food_drink">Last Food/Drink:
+        <input type="text" id="last_food_drink" name="last_food_drink" value="{{ incident.last_food_drink or '' }}" placeholder="Last meal or beverage consumed">
       </label>
     </fieldset>
 
     <fieldset>
       <legend>Injury Details</legend>
-      <label>Events Leading Up:
-        <textarea name="events_leading_up">{{ incident.events_leading_up or '' }}</textarea>
+      <label for="events_leading_up">Events Leading Up:
+        <textarea id="events_leading_up" name="events_leading_up" placeholder="Describe events leading to the incident">{{ incident.events_leading_up or '' }}</textarea>
       </label>
-      <label>Type of Injury:
-        <select name="type_of_injury">
+      <label for="type_of_injury" class="required">Type of Injury:
+        <select id="type_of_injury" name="type_of_injury" required>
           {% for option in TypeOfInjury %}
           <option value="{{ option.value }}"
             {% if incident.type_of_injury.value == option.value %}selected{% endif %}>
@@ -209,28 +263,78 @@
           {% endfor %}
         </select>
       </label>
-      <label>Other Explanation:
-        <input type="text" name="injury_other_exp" value="{{ incident.injury_other_exp or '' }}">
+      <label for="injury_other_exp" id="injury_other_label" class="hidden">Other Explanation:
+        <input type="text" id="injury_other_exp" name="injury_other_exp" value="{{ incident.injury_other_exp or '' }}" placeholder="Describe other type of injury">
       </label>
-      <label>Body Part Afflicted:
-        <input type="text" name="body_part_afflicted" value="{{ incident.body_part_afflicted or '' }}">
+      <label for="body_part_afflicted">Body Part Afflicted:
+        <input type="text" id="body_part_afflicted" name="body_part_afflicted" value="{{ incident.body_part_afflicted or '' }}" placeholder="e.g. Left arm, right ankle">
       </label>
-      <label>Summary:
-        <textarea name="incident_summary" rows="8" style="width:100%;">{{ incident.incident_summary or '' }}</textarea>
+      <label for="incident_summary" class="required">Summary:
+        <textarea id="incident_summary" name="incident_summary" rows="8" style="width:100%;" placeholder="Provide a detailed summary of the incident" required>{{ incident.incident_summary or '' }}</textarea>
       </label>
     </fieldset>
 
     <fieldset>
       <legend>Witness Information</legend>
-      <label>Witness Name:
-        <input type="text" name="witness" value="{{ incident.witness or '' }}">
+      <label for="witness">Witness Name:
+        <input type="text" id="witness" name="witness" value="{{ incident.witness or '' }}" placeholder="Full name of witness">
       </label>
-      <label>Witness Phone Number:
-        <input type="text" name="witness_phone" value="{{ incident.witness_phone or '' }}">
+      <label for="witness_phone">Witness Phone Number:
+        <input type="tel" id="witness_phone" name="witness_phone" value="{{ incident.witness_phone or '' }}" placeholder="e.g. (555) 222-3333" pattern="[0-9\-+\s()]*">
       </label>
     </fieldset>
 
     <button type="submit">Confirm & Submit</button>
   </form>
+
+<script>
+  function toggleOther(selectId, labelId) {
+    const select = document.getElementById(selectId);
+    const label = document.getElementById(labelId);
+    if (select && label) {
+      if (select.value.toLowerCase() === "other") {
+        label.classList.remove("hidden");
+      } else {
+        label.classList.add("hidden");
+      }
+    }
+  }
+
+  function toggleAmbulance() {
+    const yesOption = document.querySelector('input[name="was_transported_ambulance"][value="YES"]');
+    const noOption = document.querySelector('input[name="was_transported_ambulance"][value="NO"]');
+    const ambulanceLabel = document.getElementById("ambulance_label");
+
+    if (yesOption && ambulanceLabel) {
+      if (yesOption.checked) {
+        ambulanceLabel.classList.remove("hidden");
+      } else {
+        ambulanceLabel.classList.add("hidden");
+      }
+    }
+
+    // Add change listeners so it updates live
+    if (yesOption) yesOption.addEventListener("change", toggleAmbulance);
+    if (noOption) noOption.addEventListener("change", toggleAmbulance);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const incidentSelect = document.getElementById("type_of_incident");
+    const injurySelect = document.getElementById("type_of_injury");
+
+    if (incidentSelect) {
+      incidentSelect.addEventListener("change", () => toggleOther("type_of_incident", "incident_other_label"));
+      toggleOther("type_of_incident", "incident_other_label");
+    }
+
+    if (injurySelect) {
+      injurySelect.addEventListener("change", () => toggleOther("type_of_injury", "injury_other_label"));
+      toggleOther("type_of_injury", "injury_other_label");
+    }
+
+    // Run ambulance toggle logic
+    toggleAmbulance();
+  });
+</script>
 </body>
 </html>
