@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI
 from app.routers import portal, sms, web_router
 from app.core.exceptions import register_exceptions
@@ -12,6 +13,8 @@ app.include_router(sms.router, prefix="/sms")
 app.include_router(web_router.router)
 
 register_exceptions(app=app)
+
+os.makedirs("./app/tmp", exist_ok=True)
 
 @app.get("/")
 async def root() -> dict[str, str]:

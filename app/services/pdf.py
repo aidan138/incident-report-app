@@ -6,7 +6,6 @@ from app.models.incidents import Incident
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from app.config import settings
 import textwrap
-import logging
 
 conn = ConnectionConfig(
     MAIL_USERNAME=settings.mail_username,
