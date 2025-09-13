@@ -18,6 +18,8 @@ If information is not explicitly provided, infer reasonable defaults.
 - If not mentioned, leave it as "" (empty string).  
 - Use "YES" or "NO" for boolean fields.
 - For `location_of_incident`: extract where inside the facility the incident occurred (e.g. "staircase", "kids pool", "locker room"). If the location is not mentioned, leave it as "" (empty string).
+- If `type_of_incident` = "Other", then `incident_other_exp` must contain the described type of incident. Otherwise, set `incident_other_exp` = "".
+- If `type_of_injury` = "Other", then `injury_other_exp` must contain the described injury. Otherwise, set `injury_other_exp` = "".
 
 Return ONLY valid JSON, no explanations."""
 

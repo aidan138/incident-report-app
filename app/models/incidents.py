@@ -34,6 +34,8 @@ class Incident(Base):
     was_transported_ambulance: Mapped[str] = mapped_column(String, nullable=True)
     ambulance_to_where: Mapped[str] = mapped_column(String, nullable=True)
     type_of_incident: Mapped[TypeOfIncident] = mapped_column(Enum(TypeOfIncident, name="type_of_incident_enum", native_enum=False), nullable=True)
+    incident_other_exp: Mapped[str] = mapped_column(String, nullable=True)
+
     location_of_incident: Mapped[str] = mapped_column(String, nullable=True)
     
     # SAMPLE answers
@@ -47,6 +49,7 @@ class Incident(Base):
     type_of_injury: Mapped[TypeofInjury] = mapped_column(
         Enum(TypeofInjury, name="type_of_injury_enum", native_enum=False), nullable=True
     )
+    injury_other_exp: Mapped[str] = mapped_column(String, nullable=True)
 
     witness: Mapped[str] = mapped_column(String, nullable=True)
     witness_phone: Mapped[str] = mapped_column(String, nullable=True)

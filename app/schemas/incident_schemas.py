@@ -25,7 +25,10 @@ class TypeofInjury(Enum):
 class IncidentSummary(BaseModel):
     body_part_afflicted: Optional[str] = None
     type_of_incident: TypeOfIncident
+    incident_other_exp: Optional[str] = None
     type_of_injury: TypeofInjury
+    injury_other_exp: Optional[str] = None
+
     was_employee_involved: Optional[Literal["YES", "NO"]] = None
     was_security_contacted: Optional[Literal["YES", "NO"]] = None
     was_911_contacted: Optional[Literal["YES", "NO"]] = None

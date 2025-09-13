@@ -126,6 +126,11 @@
     </label>
 
     <label>
+      Other explanation:
+      <input type="text" name="incident_other_exp" value="{{ incident.incident_other_exp or '' }}">
+    </label>
+
+    <label>
       Where in the facility did the Incident Occur? (Be Specific):
       <input type="text" name="location_of_incident" value="{{ incident.location_of_incident or '' }}">
     </label>
@@ -172,6 +177,10 @@
         </select>
     </label>
     
+    <label>
+      Other explanation:
+      <input type="text" name="injury_other_exp" value="{{ incident.injury_other_exp or '' }}">
+    </label>
 
     <label>
       Body Part Afflicted:
