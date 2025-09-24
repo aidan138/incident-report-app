@@ -104,7 +104,7 @@ class Incident(BaseModel):
         if getattr(values, "was_transported_ambulance") == "yes" and not getattr(values, "ambulance_to_where"):
             missing.append("ambulance_to_where")  
 
-        required_fields.append(sample)
+        required_fields.extend(sample)
         
         for field in sample:
             if not getattr(values, field, None):

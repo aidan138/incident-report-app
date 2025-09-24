@@ -216,8 +216,6 @@ def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
-        raw = location.raw
-        print(f"here: {raw}")
         addr_split = location.address.split(',')
         if len(addr_split) > 5:
             addr_split = addr_split[:2] + [substr  for substr in addr_split if 'County' in substr] + addr_split[-3:-1]
