@@ -11,11 +11,13 @@ from geopy.geocoders import Nominatim
 import re
 import logging
 from app.services.gpt import extract_incident_info, generate_incident_followups
+from scourgify import normalize_address_record
 
 router = APIRouter()
 twilio_number = settings.twilio_number
 workflow_head, state_to_node = build_prompt_flow()
 geolocator = Nominatim(user_agent='address_validator')
+skip_msg = "SKIP"
 end_msg = "TERMINATE"
 addr_pat = r"""
 ^
@@ -44,6 +46,7 @@ async def handle_incident_report(
 ):
     
     curr_incident = await crud.get_incident_by_phone(db, From)
+    Body = Body.strip()
     if not curr_incident:
         # Create a new incident in the db and continue
         curr_incident = await crud.create_incident(db=db, phone=From)
@@ -68,7 +71,7 @@ async def handle_incident_report(
     else:
         # Ask the next prompt
         logging.info("The current incident state is", curr_incident.state)
-        next_message = await handle_serial_message(db=db, incident=curr_incident, message=Body.strip())
+        next_message = await handle_serial_message(db=db, incident=curr_incident, message=Body)
     
     if next_message == end_msg:
         await crud.delete_incident(db, curr_incident)
@@ -81,7 +84,9 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
     curr_state = state_to_node[incident.state]
     valid_output, error_msg = None, None
 
-    if incident.state == "start":
+    if message.upper() == skip_msg:
+        valid_output = 'N/A'
+    elif incident.state == "start":
         valid_output, error_msg = parse_start(message)
     elif "phone" in incident.state:
         # Standard sequential data extraction
@@ -92,9 +97,9 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
         valid_output, error_msg = parse_date(message)
     elif "time" in incident.state:
         valid_output, error_msg = parse_time(message)
-    elif incident.state == "witness" and message.upper() == "NA":
+    elif incident.state == "witness" and message.strip('/').upper() == "NA":
         # Need to skip the next field
-        valid_output = "NA"
+        valid_output = "N/A"
         curr_state = curr_state.next
     elif incident.state == "done":
         # TODO Handle the end of message flows gracefully to allow same lifeguard to file multiple reports
@@ -105,7 +110,7 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
     
     if valid_output:
         # Update the database with the validated output
-        if incident.state != "start" or valid_output != 'NA':
+        if incident.state != "start":
             setattr(incident, curr_state.field_name, valid_output)
         incident.state = curr_state.next.field_name
         await db.commit()
@@ -211,7 +216,9 @@ def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
-        return location.address, None
+        addr_dict = normalize_address_record(location.address)
+        address = f"{addr_dict.get("address_line_1",'')}, {addr_dict.get('city', '')}, {addr_dict.get('state','')}, {addr_dict.get('postal_code','')}"
+        return address, None
     return None, "We couldn't locate that address. Please check for typos."
 
 def parse_start(start_msg: str) -> tuple[str | None, str | None]:

@@ -4,11 +4,11 @@ from typing import Optional
 PROMPTS = {
     'start': """Hello you have reached Premier Aquatics Incident Report System.
 
-Reply 'Y' to proceed with the incident report or 'n' to cancel.""",
+Reply 'Y' to proceed with the incident report or 'n' to cancel. At any time during the incident report text 'skip' to skip a message.""",
     'employee_completing_report': "What is your name?",
     'person_involved_name': "What is the name of the person involved in the injury/incident?",
     'person_involved_age': "What is the age of the person involved in the incident?",
-    'person_involved_phone_number': "As a single number (ex: (123) 1234-1234 would be 1231234123), describe the phone number of the person involved in the incident.",
+    'person_involved_phone_number': "As a single number (ex: (123) 123-1234 would be 1231231234), describe the phone number of the person involved in the incident.",
     'person_involved_guest_of': "Who is the person involved in the incident a guest of?",
     'person_involved_address': "In the form (street address, city name, state, zipcode), what is the current address the person involved lives at?",
     'person_involved_guardian': "What is the name of the legal guardian  of the person involved?",
@@ -17,7 +17,7 @@ Reply 'Y' to proceed with the incident report or 'n' to cancel.""",
     'facility_name': "What is the name of the facility the incident occurred at?",
     'incident_address': "In the form (street address, city name, state, zipcode), what is the address of where the incident occurred?",
     'witness': "If there is a witness type their name else type 'NA'.",
-    'witness_phone': "As a single number (ex: (123) 1234-1234 would be 1231234123), describe the phone number of the witness.",
+    'witness_phone': "As a single number (ex: (123) 123-1234 would be 1231231234), describe the phone number of the witness.",
     'incident_summary': "Please provide a detailed account of the incident (Nature of Incident, Nature of Injury, Treatment, Times, etc.). Please be as specific and detailed as possible."
     }
 
