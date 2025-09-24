@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_db
 from app.models.incidents import Incident as ORMIncident
 from fastapi.templating import Jinja2Templates
-from app.services.pdf import generate_pdf, email_pdf, email_pdf_bytes, generate_pdf_bytes
+from app.services.pdf import email_pdf_bytes, generate_pdf_bytes
 from app.schemas.incident_schemas import TypeOfIncident, TypeofInjury
 from app.config import settings
 
@@ -30,14 +30,15 @@ async def confirm_incident(request: Request, incident_id: str, db: AsyncSession 
     if not incident:
         return templates.TemplateResponse("review_incident.html", {"request": request, "error": "Incident not found"})
     
-    # if incident.state in {'sending','done'}:
-    #     return {'status': 'noop', 'message': f'Incident is already {incident.state}'}
+    if incident.state in {'sending','done'}:
+        return {'status': 'noop', 'message': f'Incident is already {incident.state}'}
     
     for field, data in form_data.items():
         if hasattr(incident, field):
             setattr(incident, field, data)
     
     # Update database and incident with confirmed data
+    incident.state = 'sending'
     await db.commit()
     await db.refresh(incident)
 

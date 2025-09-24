@@ -131,7 +131,7 @@ async def handle_summary(db, incident, message):
     missing_fields = incident_schemas.Incident.model_validate(incident).missing_fields
     logging.info(f"Found the following missing fields from summary: {missing_fields}")
     if not missing_fields:
-        incident.state = "done"
+        incident.state = "ready"
         await db.commit()
         incident_id = incident.pk
         return f"""Your incident report is ready for review. Please confirm your report here:
@@ -159,7 +159,7 @@ async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
 
     # Handle running out of followups
     if not followups:
-        incident.state = "done"
+        incident.state = "ready"
         incident.followups = {}
         incident_id = incident.pk  # Access inside session
 
