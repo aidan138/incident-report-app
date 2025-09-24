@@ -4,6 +4,13 @@ from app.models.incidents import Incident
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from app.config import settings
 import textwrap
+import logging
+import asyncio
+from fastapi import HTTPException
+from app.core.exceptions import is_transient_smtp_error
+from io import BytesIO
+from starlette.datastructures import UploadFile, Headers
+
 
 conn = ConnectionConfig(
     MAIL_USERNAME=settings.mail_username,
@@ -17,7 +24,6 @@ conn = ConnectionConfig(
 )
 
 TEMPLATE_PDF = "./app/templates/Fillable Blank Incident Report (2)[35].pdf"
-OUTPUT_DIR = "./app/tmp"
 
 SUMMARY_LINE_LENGTH = 88
 CHECKBOX_MAPPING = {
@@ -43,10 +49,16 @@ CHECKBOX_MAPPING = {
     },
 }
 
+MAX_ATTEMPTS = 5
+BASE_DELAY = 0.5
+MAX_DELAY = 15.0
+TIMEOUT = 15
 
-def generate_pdf(incident: Incident) -> str:
-    """Generate a incident report pdf and return its local filepath"""
-    output_path = os.path.join(OUTPUT_DIR, f"incident_{incident.pk}.pdf")
+logger = logging.getLogger(__name__)
+
+
+
+def generate_pdf_bytes(incident: Incident):
     reader = PdfReader(TEMPLATE_PDF)
     writer = PdfWriter()
 
@@ -61,10 +73,11 @@ def generate_pdf(incident: Incident) -> str:
         flatten=False              # set True if you want to burn the text in (see below)
     )
 
-    with open(output_path, "wb") as f:
-        writer.write(f)
+    buffer = BytesIO()
+    writer.write(buffer)
+    buffer.seek(0)
 
-    return output_path
+    return buffer.getvalue()
 
 def _get_incident_dict(incident: Incident):
     data = incident.to_dict()
@@ -84,20 +97,54 @@ def _get_incident_dict(incident: Incident):
     data["incident_summary"] = '\n'.join(summary_list)
     return data
 
-async def email_pdf(
+async def email_pdf_bytes(
         recipient: str,
         subject: str,
         body: str,
-        pdf_path: str
+        filename: str,
+        pdf_bytes: bytes,        
 ):
-    
+    upload = UploadFile(
+        filename=filename,
+        file=BytesIO(pdf_bytes),
+        headers=Headers({"content-type": "application/pdf"}),
+    )
+
     msg = MessageSchema(
         subject=subject,
         recipients=[recipient],
         body=body,
         subtype=MessageType.html,
-        attachments=[pdf_path]
+        attachments=[upload]
     )
     
     fm = FastMail(conn)
-    await fm.send_message(msg)
+    last_exc = None
+
+    for attempt in range(1, MAX_ATTEMPTS+1):
+        try:
+            await asyncio.wait_for(fm.send_message(msg), TIMEOUT)
+            logger.info("Email sent to %s on attempt %d", recipient, attempt)
+            return
+
+        except Exception as exc:
+            last_exc = exc
+
+            should_retry = is_transient_smtp_error(exc) # Determine if it is smtp 
+            code = getattr(exc, "code", None)
+            message = getattr(exc, "message", None) or str(exc)
+            logger.warning(
+                "Email send failed (attempt %d/%d). code=%s transient=%s error=%s",
+                attempt, MAX_ATTEMPTS, code, should_retry, message,
+                exc_info=True
+            )
+
+            delay = min(BASE_DELAY * 2**(attempt-1), MAX_DELAY)
+            try:
+                asyncio.sleep(delay)
+            except asyncio.CancelledError: # Raise outside exception
+                break
+    
+    raise HTTPException(
+        status_code=500, detail=f'Failed to send email to recipient {recipient} after {MAX_ATTEMPTS} retries'
+    ) from last_exc

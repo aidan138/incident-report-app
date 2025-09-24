@@ -216,8 +216,13 @@ def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
-        addr_dict = normalize_address_record(location.address)
-        address = f"{addr_dict.get("address_line_1",'')}, {addr_dict.get('city', '')}, {addr_dict.get('state','')}, {addr_dict.get('postal_code','')}"
+        raw = location.raw
+        print(f"here: {raw}")
+        addr_split = location.address.split(',')
+        if len(addr_split) > 5:
+            addr_split = addr_split[:2] + [substr  for substr in addr_split if 'County' in substr] + addr_split[-3:-1]
+            
+        address = ','.join(addr_split)
         return address, None
     return None, "We couldn't locate that address. Please check for typos."
 
