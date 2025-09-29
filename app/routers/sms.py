@@ -11,7 +11,7 @@ from geopy.geocoders import Nominatim
 import re
 import logging
 from app.services.gpt import extract_incident_info, generate_incident_followups
-from scourgify import normalize_address_record
+from datetime import datetime
 
 router = APIRouter()
 twilio_number = settings.twilio_number
@@ -171,7 +171,7 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
     # Get the next question and update the incidents current state
     next_field, next_question = next(iter(followups.items()))
     incident.state = next_field
-    await db.commit()    
+    await db.commit()
     return next_question
 
 
@@ -182,30 +182,19 @@ def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     return None, "Please input a valid phone number As a single number (ex: (123) 1234-1234 would be 1231234123)."
 
 def parse_date(date_str: str) -> tuple[str | None, str | None]:
-    #TODO more robust handling ensuring valid dates and times
     date_list = date_str.split("/")
     if len(date_list) == 3:
-        valid_output, error_msg = date_str, None
-        for act_len, exp_len in zip([len(date) for date in date_list], date_lens):
-            if act_len != exp_len:
-                valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
-                break
-    else:
-        valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
+        try:
+            valid_output, error_msg = datetime.strptime(date_str, "%m/%d/%Y").date(), None
+        except ValueError:
+            valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
+
     return valid_output, error_msg
     
 def parse_time(time_str) -> tuple[str | None, str | None]:
-    time_list = time_str.split(":")
-    if len(time_list) == 2 and 0 < len(time_list[0]) <= 2 and len(time_list[1]) == 4:
-        hours, minutes_m = time_list
-        minutes, am_o_pm = minutes_m[:2], minutes_m[2:].lower()
-        
-        if 12 < int(hours) or int(hours) <= 0 or int(minutes) < 0 or int(minutes) >= 60 or\
-        (am_o_pm != 'am' and am_o_pm != 'pm'):
-            valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
-        else:
-            valid_output, error_msg = time_str[:-2] + am_o_pm, None # Unifies the am/pm to be lower case
-    else:
+    try:
+        valid_output, error_msg = datetime.strptime(time_str, '%I:%M%p').time(), None
+    except ValueError:
         valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
     return valid_output, error_msg
 

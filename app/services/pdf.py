@@ -82,6 +82,8 @@ def generate_pdf_bytes(incident: Incident):
 def _get_incident_dict(incident: Incident):
     data = incident.to_dict()
     data["date_of_report"] = data["created"].strftime("%m/%d/%Y")
+    data["date_of_incident"] = data["date_of_incident"].strftime("%m/%d/%Y")
+    data["time_of_incident"] = data["time_of_incident"].strftime("%I:%M%p")
     summary = data["incident_summary"]
 
     # Iterate through checkboxes

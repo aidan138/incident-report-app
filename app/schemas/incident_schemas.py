@@ -1,6 +1,7 @@
 from pydantic import BaseModel, model_validator, ConfigDict
 from typing import Optional, Literal
 from enum import Enum
+from datetime import time, date
 
 class TypeOfIncident(Enum):
     FirstAid = "FirstAid"
@@ -57,11 +58,11 @@ class Incident(BaseModel):
     person_involved_address: str
     person_involved_guardian: str
 
-    time_of_incident: str
+    time_of_incident: time
     facility_name: str
     incident_address: str
     
-    date_of_incident: str
+    date_of_incident: date
     incident_summary: str
     witness: Optional[str] = None
     witness_phone: Optional[str] = None
