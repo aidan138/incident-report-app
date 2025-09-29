@@ -30,8 +30,8 @@ async def confirm_incident(request: Request, incident_id: str, db: AsyncSession 
     if not incident:
         return templates.TemplateResponse("review_incident.html", {"request": request, "error": "Incident not found"})
     
-    # if incident.state in {'sending','done'}:
-    #     return {'status': 'noop', 'message': f'Incident is already {incident.state}'}
+    if incident.state in {'sending','done'}:
+        return {'status': 'noop', 'message': f'Incident is already {incident.state}'}
     
     for field, data in form_data.items():
         if not hasattr(incident, field):
