@@ -19,20 +19,6 @@ workflow_head, state_to_node = build_prompt_flow()
 geolocator = Nominatim(user_agent='address_validator')
 skip_msg = "SKIP"
 end_msg = "TERMINATE"
-addr_pat = r"""
-^
-\s*                                                 
-([\d\w\s.-]+(?:\s(?:Apt|Suite|\#)\s*\d+)?)          # street with optional unit
-(?:,|\r?\n)\s*                                      # comma or newline separator
-([\w\s.-]+)                                         # city
-(?:,|\s)                                            # optional comma or space before region/state
-([A-Z]{2}|[\w\s.-]+)?                               # US state or international region (optional)
-\s*                                                 # optional spaces
-(\d{5}(?:-\d{4})?|\w+)?                             # ZIP/postal code (US or international) optional
-(?:\r?\n([\w\s]+))?                                 # optional country line
-\s*$
-"""
-pattern = re.compile(addr_pat, re.VERBOSE)
 date_lens = (2,2,4)
 fatal_server_response = "Incident reporting service currently down. Please perform handwritten incident reporting."
 ROOT_URL = settings.root_url
@@ -212,7 +198,6 @@ def parse_time(time_str) -> tuple[str | None, str | None]:
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     logging.info(addr_str)
-    
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
         addr_split = location.address.split(',')
