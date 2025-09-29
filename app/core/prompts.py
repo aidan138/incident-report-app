@@ -12,6 +12,7 @@ Reply 'Y' to proceed with the incident report or 'n' to cancel. At any time duri
     'person_involved_guest_of': "Who is the person involved in the incident a guest of?",
     'person_involved_address': "In the form (street address, city name, state, zipcode), what is the current address the person involved lives at?",
     'person_involved_guardian': "What is the name of the legal guardian  of the person involved?",
+    'incident_was_today': "If the incident just occurred please type 'Y' otherwise type 'n'",
     'date_of_incident': "In MM/DD/YYYY format, what was the date the incident occurred at?",
     'time_of_incident': "In HH:MMam/pm (ex: 12:30pm) format, what was the time the incident occurred at?",
     'facility_name': "What is the name of the facility the incident occurred at?",

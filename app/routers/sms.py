@@ -93,6 +93,18 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
         valid_output, error_msg = parse_phone_number(message)
     elif "address" in incident.state:
         valid_output, error_msg = parse_address(message)
+    elif 'incident_was_today' == incident.state:
+        if message == 'Y':
+            curr_dt = datetime.now()
+            valid_output = 'True'
+            time = curr_dt.time()
+            time.second = 0
+            incident.date_of_incident, incident.time_of_incident = curr_dt.date(), time
+            curr_state = curr_state.next.next
+        elif message == 'n':
+            valid_output = 'False'
+        else:
+            error_msg = "Please respond with either 'Y' for yes or 'n' for no" if message not in ['Y', 'n'] else None
     elif "date" in incident.state:
         valid_output, error_msg = parse_date(message)
     elif "time" in incident.state:
@@ -110,9 +122,9 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
     
     if valid_output:
         # Update the database with the validated output
-        if incident.state != "start":
-            setattr(incident, curr_state.field_name, valid_output)
-        incident.state = curr_state.next.field_name
+        if incident.state not in ["start", 'incident_was_today']:
+            setattr(incident, incident.state, valid_output)
+        incident.state = curr_state.next.field_name 
         await db.commit()
         await db.refresh(incident)
         return curr_state.next.prompt
@@ -200,8 +212,6 @@ def parse_time(time_str) -> tuple[str | None, str | None]:
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     logging.info(addr_str)
-    # if not re.match(pattern, addr_str):
-    #     return None, "Please enter a valid address (ex. 123 Main St, Aliso Viejo, CA 92620)."
     
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
