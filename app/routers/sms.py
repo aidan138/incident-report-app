@@ -8,29 +8,16 @@ from app.crud import crud
 from app.schemas import incident_schemas
 from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
-import re
 import logging
 from app.services.gpt import extract_incident_info, generate_incident_followups
+from datetime import datetime
 
 router = APIRouter()
 twilio_number = settings.twilio_number
 workflow_head, state_to_node = build_prompt_flow()
 geolocator = Nominatim(user_agent='address_validator')
+skip_msg = "SKIP"
 end_msg = "TERMINATE"
-addr_pat = r"""
-^
-\s*                                                 
-([\d\w\s.-]+(?:\s(?:Apt|Suite|\#)\s*\d+)?)          # street with optional unit
-(?:,|\r?\n)\s*                                      # comma or newline separator
-([\w\s.-]+)                                         # city
-(?:,|\s)                                            # optional comma or space before region/state
-([A-Z]{2}|[\w\s.-]+)?                               # US state or international region (optional)
-\s*                                                 # optional spaces
-(\d{5}(?:-\d{4})?|\w+)?                             # ZIP/postal code (US or international) optional
-(?:\r?\n([\w\s]+))?                                 # optional country line
-\s*$
-"""
-pattern = re.compile(addr_pat, re.VERBOSE)
 date_lens = (2,2,4)
 fatal_server_response = "Incident reporting service currently down. Please perform handwritten incident reporting."
 ROOT_URL = settings.root_url
@@ -44,6 +31,7 @@ async def handle_incident_report(
 ):
     
     curr_incident = await crud.get_incident_by_phone(db, From)
+    Body = Body.strip()
     if not curr_incident:
         # Create a new incident in the db and continue
         curr_incident = await crud.create_incident(db=db, phone=From)
@@ -68,7 +56,7 @@ async def handle_incident_report(
     else:
         # Ask the next prompt
         logging.info("The current incident state is", curr_incident.state)
-        next_message = await handle_serial_message(db=db, incident=curr_incident, message=Body.strip())
+        next_message = await handle_serial_message(db=db, incident=curr_incident, message=Body)
     
     if next_message == end_msg:
         await crud.delete_incident(db, curr_incident)
@@ -81,20 +69,33 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
     curr_state = state_to_node[incident.state]
     valid_output, error_msg = None, None
 
-    if incident.state == "start":
+    if message.upper() == skip_msg:
+        valid_output = 'N/A'
+    elif incident.state == "start":
         valid_output, error_msg = parse_start(message)
     elif "phone" in incident.state:
         # Standard sequential data extraction
         valid_output, error_msg = parse_phone_number(message)
     elif "address" in incident.state:
         valid_output, error_msg = parse_address(message)
+    elif 'incident_was_today' == incident.state:
+        if message == 'Y':
+            curr_dt = datetime.now()
+            valid_output = 'True'
+            time = curr_dt.time().replace(second=0, microsecond=0)
+            incident.date_of_incident, incident.time_of_incident = curr_dt.date(), time
+            curr_state = curr_state.next.next
+        elif message == 'n':
+            valid_output = 'False'
+        else:
+            error_msg = "Please respond with either 'Y' for yes or 'n' for no" if message not in ['Y', 'n'] else None
     elif "date" in incident.state:
         valid_output, error_msg = parse_date(message)
     elif "time" in incident.state:
         valid_output, error_msg = parse_time(message)
-    elif incident.state == "witness" and message.upper() == "NA":
+    elif incident.state == "witness" and message.strip('/').upper() == "NA":
         # Need to skip the next field
-        valid_output = "NA"
+        valid_output = "N/A"
         curr_state = curr_state.next
     elif incident.state == "done":
         # TODO Handle the end of message flows gracefully to allow same lifeguard to file multiple reports
@@ -105,9 +106,9 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
     
     if valid_output:
         # Update the database with the validated output
-        if incident.state != "start" or valid_output != 'NA':
-            setattr(incident, curr_state.field_name, valid_output)
-        incident.state = curr_state.next.field_name
+        if incident.state not in ["start", 'incident_was_today']:
+            setattr(incident, incident.state, valid_output)
+        incident.state = curr_state.next.field_name 
         await db.commit()
         await db.refresh(incident)
         return curr_state.next.prompt
@@ -126,7 +127,7 @@ async def handle_summary(db, incident, message):
     missing_fields = incident_schemas.Incident.model_validate(incident).missing_fields
     logging.info(f"Found the following missing fields from summary: {missing_fields}")
     if not missing_fields:
-        incident.state = "done"
+        incident.state = "ready"
         await db.commit()
         incident_id = incident.pk
         return f"""Your incident report is ready for review. Please confirm your report here:
@@ -142,7 +143,6 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
 
     return getattr(follow_ups, first_field)
 
-
 async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
     current_field = incident.state
     setattr(incident, current_field, message)
@@ -154,7 +154,7 @@ async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
 
     # Handle running out of followups
     if not followups:
-        incident.state = "done"
+        incident.state = "ready"
         incident.followups = {}
         incident_id = incident.pk  # Access inside session
 
@@ -166,9 +166,8 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
     # Get the next question and update the incidents current state
     next_field, next_question = next(iter(followups.items()))
     incident.state = next_field
-    await db.commit()    
+    await db.commit()
     return next_question
-
 
 def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     phone_str = phone_str if phone_str.startswith("+") else "+1" + phone_str
@@ -177,41 +176,32 @@ def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     return None, "Please input a valid phone number As a single number (ex: (123) 1234-1234 would be 1231234123)."
 
 def parse_date(date_str: str) -> tuple[str | None, str | None]:
-    #TODO more robust handling ensuring valid dates and times
     date_list = date_str.split("/")
     if len(date_list) == 3:
-        valid_output, error_msg = date_str, None
-        for act_len, exp_len in zip([len(date) for date in date_list], date_lens):
-            if act_len != exp_len:
-                valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
-                break
-    else:
-        valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
+        try:
+            valid_output, error_msg = datetime.strptime(date_str, "%m/%d/%Y").date(), None
+        except ValueError:
+            valid_output, error_msg = None, "Please ensure you entered a valid date in the form MM/DD/YYYY"
+
     return valid_output, error_msg
     
 def parse_time(time_str) -> tuple[str | None, str | None]:
-    time_list = time_str.split(":")
-    if len(time_list) == 2 and 0 < len(time_list[0]) <= 2 and len(time_list[1]) == 4:
-        hours, minutes_m = time_list
-        minutes, am_o_pm = minutes_m[:2], minutes_m[2:].lower()
-        
-        if 12 < int(hours) or int(hours) <= 0 or int(minutes) < 0 or int(minutes) >= 60 or\
-        (am_o_pm != 'am' and am_o_pm != 'pm'):
-            valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
-        else:
-            valid_output, error_msg = time_str[:-2] + am_o_pm, None # Unifies the am/pm to be lower case
-    else:
+    try:
+        valid_output, error_msg = datetime.strptime(time_str, '%I:%M%p').time(), None
+    except ValueError:
         valid_output, error_msg = None, "Please enter a valid time in the form HH:MMam/pm (ex: 12:30pm)"
     return valid_output, error_msg
 
 def parse_address(addr_str: str) -> tuple[str | None, str | None]:
     logging.info(addr_str)
-    # if not re.match(pattern, addr_str):
-    #     return None, "Please enter a valid address (ex. 123 Main St, Aliso Viejo, CA 92620)."
-    
     location = geolocator.geocode(addr_str, timeout=5)
     if location:
-        return location.address, None
+        addr_split = location.address.split(',')
+        if len(addr_split) > 5:
+            addr_split = addr_split[:2] + [substr  for substr in addr_split if 'County' in substr] + addr_split[-3:-1]
+            
+        address = ','.join(addr_split)
+        return address, None
     return None, "We couldn't locate that address. Please check for typos."
 
 def parse_start(start_msg: str) -> tuple[str | None, str | None]:

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, model_validator, ConfigDict
 from typing import Optional, Literal
 from enum import Enum
+from datetime import time, date
 
 class TypeOfIncident(Enum):
     FirstAid = "FirstAid"
@@ -57,11 +58,11 @@ class Incident(BaseModel):
     person_involved_address: str
     person_involved_guardian: str
 
-    time_of_incident: str
+    time_of_incident: time
     facility_name: str
     incident_address: str
     
-    date_of_incident: str
+    date_of_incident: date
     incident_summary: str
     witness: Optional[str] = None
     witness_phone: Optional[str] = None
@@ -91,36 +92,24 @@ class Incident(BaseModel):
         missing = []
 
         # Define groups of fields that must be filled together
-        groups = [
-            [
+        sample =[
                 "signs_symptoms", # SAMPLE acronym
                 "allergies",
                 "medications",
                 "past_history",
                 "last_food_drink",
                 "events_leading_up",
-            ],
-        ]
-        required_fields = ['']
-        if getattr(values, "was_transported_ambulance") == "yes":
+            ]
+        
+        required_fields = []
+        if getattr(values, "was_transported_ambulance") == "yes" and not getattr(values, "ambulance_to_where"):
             missing.append("ambulance_to_where")  
 
-        if getattr(values, "type_of_injury") != "other":
-            required_fields.extend([
-                "signs_symptoms",
-                "allergies",
-                "medications",
-                "past_history",
-                "last_food_drink",
-                "events_leading_up",
-            ])
+        required_fields.extend(sample)
         
-        for group in groups:
-            filled = any(getattr(values, field, None) for field in group)
-            if filled:
-                for field in group:
-                    if not getattr(values, field, None):
-                        missing.append(field)
+        for field in sample:
+            if not getattr(values, field, None):
+                missing.append(field)
 
         for field in required_fields:
             if not getattr(values, field, None) and field not in missing:

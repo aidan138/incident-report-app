@@ -1,8 +1,9 @@
-from sqlalchemy import String, Enum, JSON
+from sqlalchemy import String, Enum, JSON, Time, Date
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.ext.mutable import MutableDict
 from app.models.base import Base
 from app.schemas.incident_schemas import TypeOfIncident, TypeofInjury
+from datetime import date, time
 
 
 
@@ -20,8 +21,8 @@ class Incident(Base):
     person_involved_address: Mapped[str] = mapped_column(String, nullable=True)
     person_involved_guardian: Mapped[str] = mapped_column(String, nullable=True)
 
-    date_of_incident: Mapped[str] = mapped_column(String, nullable=True)
-    time_of_incident: Mapped[str] = mapped_column(String, nullable=True)
+    date_of_incident: Mapped[date] = mapped_column(Date, nullable=True)
+    time_of_incident: Mapped[time] = mapped_column(Time, nullable=True)
     facility_name: Mapped[str] = mapped_column(String, nullable=True)
     incident_address: Mapped[str] = mapped_column(String, nullable=True)
     

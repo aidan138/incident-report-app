@@ -4,6 +4,7 @@ from sqlalchemy import update
 from sqlalchemy.future import select
 from ..models import portal, incidents
 from ..schemas import portal_schemas
+from fastapi import HTTPException
 
 
 async def get_lifeguard_by_phone(db: AsyncSession, phone: str) -> Optional[portal.Lifeguard]:
@@ -17,6 +18,25 @@ async def create_lifeguard(db: AsyncSession, lifeguard: portal_schemas.Lifeguard
     await db.commit()
     await db.refresh(new_lg)
     return new_lg
+
+async def create_manager(db: AsyncSession, mg: portal_schemas.ManagerPayload):
+    regions = (
+        await db.execute(
+            select(portal_schemas.Region).where(portal_schemas.Region.slug.in_(mg.region_slugs))
+        )
+    ).scalars().all()
+    
+    missing = set(mg.region_slugs) - {region.slug for region in regions}
+    if missing:
+        raise HTTPException(status_code=404, detail=f'Unknown regions: {missing}')
+    
+    new_manager = portal.Manager(name=mg.name, email=mg.email)
+    new_manager.regions.update(regions)
+
+    db.add(new_manager)
+    await db.commit()
+    await db.refresh(new_manager)
+    return new_manager
 
 async def get_incident_by_phone(db: AsyncSession, phone: str) -> Optional[incidents.Incident]:
     q = await db.execute(select(incidents.Incident).where((incidents.Incident.creator_phone == phone) & (incidents.Incident.state != 'done')))
@@ -55,6 +75,3 @@ async def update_incident_fields(db: AsyncSession, incident_pk: int, fields_to_v
     await db.commit()
     return result.rowcount
 
-# async def update_incident(db: AsyncSession, incident: incidents.Incident) -> incidents.Incident:
-#     await db.commit()
-#     await db.refresh(incident)
