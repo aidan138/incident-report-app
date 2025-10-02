@@ -23,10 +23,26 @@ async def create_lifeguard(lg: portal_schemas.LifeguardPayload, db: AsyncSession
         raise HTTPException(status_code=500, detail=f"Failed to get lifeguard information from phone number {lg.phone}")
     
     if existing:
-            raise HTTPException(status_code=400, detail="Lifeguard exists")
+        raise HTTPException(status_code=400, detail="Lifeguard exists")
     
     try:
         new_lg = crud.create_lifeguard(db, lg)
         return new_lg
     except SQLAlchemyError:
          HTTPException(status_code=500, detail="Internal server error inserting lifeguard into the database")
+
+@router.post('/create-manager')
+async def create_manager(mg: portal_schemas.ManagerPayload, db: AsyncSession = Depends(get_db)):
+    try:
+        existing = await crud.get_manager_by_email(db, mg.email)
+    except SQLAlchemyError:
+         raise HTTPException(status_code=500, detail=f"Failed to get manager information from email {mg.email}")
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Manager exists")
+
+    try:
+        manager = create_manager(mg, db)
+        return manager
+    except SQLAlchemyError:
+         HTTPException(status_code=500, detail="Internal server error inserting manager into the database")

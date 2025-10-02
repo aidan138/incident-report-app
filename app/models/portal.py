@@ -5,7 +5,7 @@ from app.models.base import Base
 import uuid
 
 
-manager_region_table = Table(
+manager_region = Table(
     "manager_region",
     Base.metadata,
     Column("manager_id", UUID(as_uuid=True), ForeignKey("managers.pk")),
@@ -16,16 +16,16 @@ manager_region_table = Table(
 class Manager(Base):
     __tablename__ = 'managers'
     name: Mapped[str] = mapped_column(String, nullable=False)
-
+    email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    regions: Mapped[list['Region']] = relationship(
+        secondary=manager_region, back_populates='managers', lazy='selectin', collection_class=set
+    )
 
 class Region(Base):
     __tablename__ = 'regions'
-    manager_id: Mapped[int] = mapped_column(Integer, ForeignKey("managers.pk"))
-
+    slug: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     managers: Mapped[list["Manager"]] = relationship(
-        secondary=manager_region_table,
-        backref="regions",
-        lazy='selectin'
+        secondary=manager_region, back_populates='regions', lazy='selectin', collection_class=set
     )
     
     lifeguards: Mapped[list["Lifeguard"]] = relationship(backref="region")

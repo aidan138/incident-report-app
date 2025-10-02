@@ -23,9 +23,15 @@ class Region(BaseModel):
     class Config:
         from_attributes = True
 
+class ManagerPayload(BaseModel):
+    name: str = Field(min_length=1)
+    email: str = Field()
+    region_slugs: list[str]
+
 class Manager(BaseModel):
     id: UUID
-    name: str = Field(min_length=1)
+    name: str
+    email: str
 
     class Config:
         from_attributes = True

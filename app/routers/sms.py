@@ -8,7 +8,6 @@ from app.crud import crud
 from app.schemas import incident_schemas
 from app.models.incidents import Incident
 from geopy.geocoders import Nominatim
-import re
 import logging
 from app.services.gpt import extract_incident_info, generate_incident_followups
 from datetime import datetime
@@ -83,8 +82,7 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
         if message == 'Y':
             curr_dt = datetime.now()
             valid_output = 'True'
-            time = curr_dt.time()
-            time.second = 0
+            time = curr_dt.time().replace(second=0, microsecond=0)
             incident.date_of_incident, incident.time_of_incident = curr_dt.date(), time
             curr_state = curr_state.next.next
         elif message == 'n':
@@ -145,7 +143,6 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
 
     return getattr(follow_ups, first_field)
 
-
 async def handle_follow_up(db: AsyncSession, incident: Incident, message: str):
     current_field = incident.state
     setattr(incident, current_field, message)
@@ -171,7 +168,6 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
     incident.state = next_field
     await db.commit()
     return next_question
-
 
 def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     phone_str = phone_str if phone_str.startswith("+") else "+1" + phone_str

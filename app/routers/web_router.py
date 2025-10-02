@@ -39,7 +39,7 @@ async def confirm_incident(request: Request, incident_id: str, db: AsyncSession 
         prev_type = type(getattr(incident, field))
         if prev_type is time and type(data) is str:
             print("The time data is ", data )
-            data = datetime.strptime(data, '%H:%M').time()
+            data = datetime.strptime(data, '%H:%M:%S').time()
             print("The converted time data is", data.strftime('%I:%M%p'))
         elif prev_type is date and type(data) is str:
             data = datetime.strptime(data, "%Y-%m-%d").date()
