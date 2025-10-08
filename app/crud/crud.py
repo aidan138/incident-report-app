@@ -38,6 +38,43 @@ async def create_manager(db: AsyncSession, mg: portal_schemas.ManagerPayload):
     await db.refresh(new_manager)
     return new_manager
 
+async def create_region(db: AsyncSession, rg: portal_schemas.RegionPayload):
+    if rg.managers:
+        managers = (
+            await db.execute(
+                select(portal_schemas.Region).where(portal_schemas.Region.managers.in_(rg.managers))
+            )
+        )
+
+        missing = set(rg.managers) - {manager.name for manager in  managers}
+    else:
+        missing = None
+
+    if missing:
+        raise HTTPException(status_code=404, detail=f'Unknown managers: {missing}')
+    
+    new_region = portal.Region(slug=rg.slug)
+    new_region.locations = new_region.locations if new_region.locations else {}
+    new_region.locations.update(rg.locations)
+    for mgr in rg.managers:
+        new_region.managers.append(mgr)
+    
+    db.add(new_region)
+    await db.commit()
+    await db.refresh(new_region)
+    return new_region
+
+
+async def get_manager_by_email(db: AsyncSession, email: str):
+    q = await db.execute(select(portal.Manager).where(portal.Manager.email == email))
+    scalars = q.scalars()
+    return scalars.first()
+
+async def get_region_by_slug(db: AsyncSession, slug: str):
+    q = await db.execute(select(portal.Region).where(portal.Region.slug == slug))
+    scalars = q.scalars()
+    return scalars.first()
+
 async def get_incident_by_phone(db: AsyncSession, phone: str) -> Optional[incidents.Incident]:
     q = await db.execute(select(incidents.Incident).where((incidents.Incident.creator_phone == phone) & (incidents.Incident.state != 'done')))
     scalars =  q.scalars()

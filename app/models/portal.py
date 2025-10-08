@@ -1,6 +1,7 @@
-from sqlalchemy import String, ForeignKey, Integer, Table, Column
+from sqlalchemy import String, ForeignKey, Integer, Table, Column, JSON
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.mutable import MutableDict
 from app.models.base import Base
 import uuid
 
@@ -25,7 +26,13 @@ class Region(Base):
     __tablename__ = 'regions'
     slug: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     managers: Mapped[list["Manager"]] = relationship(
-        secondary=manager_region, back_populates='regions', lazy='selectin', collection_class=set
+        secondary=manager_region, back_populates='regions', lazy='selectin'
+    )
+    
+    locations: Mapped[dict] = mapped_column(
+        MutableDict.as_mutable(JSON),
+        nullable=False,
+        default=dict,
     )
     
     lifeguards: Mapped[list["Lifeguard"]] = relationship(backref="region")

@@ -1,6 +1,7 @@
 from uuid import UUID
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any, Optional
 
 
 class LifeguardPayload(BaseModel):
@@ -15,9 +16,18 @@ class Lifeguard(LifeguardPayload):
     class Config:
         from_attributes = True
 
+class RegionPayload(BaseModel):
+    slug: str = Field(min_length=1)
+    locations: list[str]
+    locations:dict[str, str]
+    managers: Optional[list[str]] = [] # list of manager/s
+
 class Region(BaseModel):
     id: UUID
-    name: str = Field(min_length=1)
+    slug: str = Field(min_length=1)
+    managers: Any
+    locations: dict[str, str] # Maps a location name to an address
+    lifeguards: Any
     created: datetime
 
     class Config:

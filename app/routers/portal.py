@@ -46,3 +46,23 @@ async def create_manager(mg: portal_schemas.ManagerPayload, db: AsyncSession = D
         return manager
     except SQLAlchemyError:
          HTTPException(status_code=500, detail="Internal server error inserting manager into the database")
+
+@router.post('/create-region')
+async def create_region(rg: portal_schemas.RegionPayload, db: AsyncSession = Depends(get_db)):
+    try:
+        existing = await crud.get_region_by_slug(db, rg.slug)
+    except SQLAlchemyError:
+         raise HTTPException(status_code=500, detail=f"Failed to get region information from slug {rg.slug}")
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Region exists")
+
+    try:
+        region = await crud.create_region(db, rg)
+        return region
+    except SQLAlchemyError:
+         HTTPException(status_code=500, detail="Internal server error inserting region into the database")
+
+@router.patch('/add-manager-to-region')
+async def add_manager_to_region():
+    pass
