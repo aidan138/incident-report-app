@@ -18,9 +18,12 @@ class Lifeguard(LifeguardPayload):
 
 class RegionPayload(BaseModel):
     slug: str = Field(min_length=1)
-    locations: list[str]
-    locations:dict[str, str]
+    locations: dict[str, str]
     managers: Optional[list[str]] = [] # list of manager/s
+
+class RegionLocationUpdate(BaseModel):
+    slug: str = Field(min_length=1)
+    locations: dict[str, str]
 
 class Region(BaseModel):
     id: UUID

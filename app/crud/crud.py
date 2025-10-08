@@ -20,25 +20,27 @@ async def create_lifeguard(db: AsyncSession, lifeguard: portal_schemas.Lifeguard
     return new_lg
 
 async def create_manager(db: AsyncSession, mg: portal_schemas.ManagerPayload):
-    print("Adding manager...")
-    regions = (
-        await db.execute(
-            select(portal.Region).where(portal.Region.slug.in_(mg.region_slugs))
-        )
-    ).scalars().all()
-    
-    missing = set(mg.region_slugs) - {region.slug for region in regions}
-    if missing:
-        raise HTTPException(status_code=404, detail=f'Unknown regions: {missing}')
-    
-    new_manager = portal.Manager(name=mg.name, email=mg.email)
-    for rg in regions:
-        new_manager.regions.append(rg)
+    if mg.region_slugs:
+        regions = (
+            await db.execute(
+                select(portal.Region).where(portal.Region.slug.in_(mg.region_slugs))
+            )
+        ).scalars().all()
+        
+        missing = set(mg.region_slugs) - {region.slug for region in regions}
+        if missing:
+            raise HTTPException(status_code=404, detail=f'Unknown regions: {missing}')
+        
+        new_manager = portal.Manager(name=mg.name, email=mg.email)
+        for rg in regions:
+            new_manager.regions.append(rg)
 
-    db.add(new_manager)
-    await db.commit()
-    await db.refresh(new_manager)
-    return new_manager
+        db.add(new_manager)
+        await db.commit()
+        await db.refresh(new_manager)
+        return new_manager
+    else:
+        raise HTTPException(status_code=400, detail='No regions provided')
 
 async def create_region(db: AsyncSession, rg: portal_schemas.RegionPayload):
     if rg.managers:
@@ -65,6 +67,15 @@ async def create_region(db: AsyncSession, rg: portal_schemas.RegionPayload):
     await db.commit()
     await db.refresh(new_region)
     return new_region
+
+async def update_region_location(db: AsyncSession, rg: portal.Region, locations: dict[str, str]):
+    rg.locations = rg.locations if rg.locations else {}
+    rg.locations.update(locations)
+
+    await db.commit()
+    await db.refresh(rg)
+    return rg
+    
 
 
 async def get_manager_by_email(db: AsyncSession, email: str):

@@ -64,5 +64,17 @@ async def create_region(rg: portal_schemas.RegionPayload, db: AsyncSession = Dep
          HTTPException(status_code=500, detail="Internal server error inserting region into the database")
 
 @router.patch('/add-location-to-region')
-async def add_location_to_region():
-    pass
+async def add_location_to_region(rlu: portal_schemas.RegionLocationUpdate, db: AsyncSession = Depends(get_db)):
+    try:
+        existing = await crud.get_region_by_slug(db, rlu.slug)
+    except SQLAlchemyError:
+         raise HTTPException(status_code=500, detail=f"Failed to get region information from slug {rlu.slug}")
+    
+    if not existing:
+        raise HTTPException(status_code=404, detail="Region not found {}")
+
+    try:
+        region = await crud.update_region_location(db, existing, rlu.locations)
+        return region
+    except SQLAlchemyError:
+         HTTPException(status_code=500, detail="Internal server error updating region with new locations")
