@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.mutable import MutableDict
 from app.models.base import Base
+from app.models.incidents import Incident
 import uuid
 
 
@@ -35,6 +36,11 @@ class Region(Base):
         default=dict,
     )
     
+    incident_reports: Mapped[list['Incident']] = relationship(
+        back_populates='region',
+        cascade='all, delete-orphan' # Deletes all incident reports associated with a region if region deletedn
+    )
+
     lifeguards: Mapped[list["Lifeguard"]] = relationship(backref="region")
 
 class Lifeguard(Base):

@@ -1,9 +1,11 @@
-from sqlalchemy import String, Enum, JSON, Time, Date
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Enum, JSON, Time, Date, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.mutable import MutableDict
 from app.models.base import Base
+from app.models.portal import Region
 from app.schemas.incident_schemas import TypeOfIncident, TypeofInjury
 from datetime import date, time
+import uuid
 
 
 
@@ -13,6 +15,8 @@ class Incident(Base):
     state: Mapped[str] = mapped_column(String, nullable=False, default="start")
     creator_phone: Mapped[str] = mapped_column(String, nullable=False)
     employee_completing_report: Mapped[str] = mapped_column(String, nullable=True)
+    region_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("regions.pk"))
+    region: Mapped[Region] = relationship(back_populates="incident_reports")
 
     person_involved_name: Mapped[str] = mapped_column(String, nullable=True)
     person_involved_age: Mapped[str] = mapped_column(String, nullable=True)

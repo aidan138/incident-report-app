@@ -11,6 +11,10 @@ from geopy.geocoders import Nominatim
 import logging
 from app.services.gpt import extract_incident_info, generate_incident_followups
 from datetime import datetime
+import re
+import unicodedata
+from rapidfuzz import fuzz
+import jellyfish
 
 router = APIRouter()
 twilio_number = settings.twilio_number
@@ -21,6 +25,17 @@ end_msg = "TERMINATE"
 date_lens = (2,2,4)
 fatal_server_response = "Incident reporting service currently down. Please perform handwritten incident reporting."
 ROOT_URL = settings.root_url
+
+ABBREV = {
+    "&":" and ", "ctr":"center", "ct":"court", "co":"company",
+    "st":"street", "ste":"suite", "blvd":"boulevard", "ave":"avenue",
+    "hosp":"hospital", "med":"medical"
+}
+DROP_TAILS = {"pool"}
+MATCH = 0.80
+
+loc_to_id, loc_to_adr = crud.fetch_regions_to_locations_from_db(get_db())
+
 
 @router.post('/incident')
 async def handle_incident_report(
@@ -73,6 +88,11 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
         valid_output = 'N/A'
     elif incident.state == "start":
         valid_output, error_msg = parse_start(message)
+    elif incident.state == "facility_name":
+        valid_output, error_msg = parse_facility_name(message)
+        if valid_output:
+            incident.incident_address = loc_to_adr[valid_output]
+        
     elif "phone" in incident.state:
         # Standard sequential data extraction
         valid_output, error_msg = parse_phone_number(message)
@@ -169,6 +189,14 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
     await db.commit()
     return next_question
 
+def parse_facility_name(message: str) -> tuple[str | None, str | None]:
+    facility_scores = [(_name_score(message, facility), facility) for facility in loc_to_adr]
+    best = sorted(facility_scores, reverse=True, key=lambda x: x[0])[0]
+    if best[0] >= MATCH:
+        return best[1], None
+    return None, "Please correct the incident name."
+    
+
 def parse_phone_number(phone_str: str) -> tuple[str | None, str | None]:
     phone_str = phone_str if phone_str.startswith("+") else "+1" + phone_str
     if phone_str[1:].isdigit() and 11 <= len(phone_str[1:]) < 14:
@@ -214,3 +242,30 @@ def parse_start(start_msg: str) -> tuple[str | None, str | None]:
         return None, end_msg
 
     return None, "Reply 'Y' to proceed with the incident report or 'n' to cancel"
+
+
+def _name_score(q: str, cand: str) -> float:
+    # Normalize once
+    qn, cn = _normalize(q), _normalize(cand)
+    # Fast fuzzy signals (0..100)
+    ts = fuzz.token_set_ratio(qn, cn)
+    pr = fuzz.partial_ratio(qn, cn)
+    jw = int(jellyfish.jaro_winkler_similarity(qn, cn) * 100)
+    # Phonetic bump if close
+    qph = " ".join(jellyfish.metaphone(w) for w in qn.split())
+    cph = " ".join(jellyfish.metaphone(w) for w in cn.split())
+    ph = 12 if fuzz.ratio(qph, cph) >= 90 else 0
+    # Lightweight blend → 0..1
+    raw = 0.5*ts + 0.35*pr + 0.15*jw + ph
+    return max(0.0, min(1.0, raw/112))  # 100 + 12 max ≈ 112
+
+def _normalize(s: str) -> str:
+    s = unicodedata.normalize("NFKD", s).encode("ascii","ignore").decode("ascii")
+    s = s.lower()
+    s = re.sub(r"[^\w\s]", " ", s)           # punctuation -> space
+    for k,v in ABBREV.items():               # light expansions
+        s = re.sub(rf"\b{k}\b", v, s)
+    toks = [t for t in s.split() if t not in DROP_TAILS]
+    return " ".join(toks)
+
+
