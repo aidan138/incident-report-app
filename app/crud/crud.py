@@ -124,7 +124,7 @@ async def update_incident_fields(db: AsyncSession, incident_pk: int, fields_to_v
     await db.commit()
     return result.rowcount
 
-def fetch_regions_to_locations_from_db(db: AsyncSession) -> tuple[dict[str, dict]]:
+async def fetch_regions_to_locations_from_db(db: AsyncSession) -> tuple[dict[str, dict]]:
     """Fetches all regions from the database and returns a dict that maps pk's to locations.
 
     Args:
@@ -134,5 +134,5 @@ def fetch_regions_to_locations_from_db(db: AsyncSession) -> tuple[dict[str, dict
         tuple[dict[str, dict]]: A dictionary mapping location names 
     """
     stmt = select(portal.Region)
-    regions = db.scalars(stmt).all()
+    regions = await db.scalars(stmt).all()
     return {location: region.pk for region in regions for location in region.locations}, {location for region in regions for location in region.locations}

@@ -15,6 +15,7 @@ import re
 import unicodedata
 from rapidfuzz import fuzz
 import jellyfish
+import asyncio
 
 router = APIRouter()
 twilio_number = settings.twilio_number
@@ -33,8 +34,6 @@ ABBREV = {
 }
 DROP_TAILS = {"pool"}
 MATCH = 0.80
-
-loc_to_id, loc_to_adr = crud.fetch_regions_to_locations_from_db(get_db())
 
 
 @router.post('/incident')
@@ -89,9 +88,7 @@ async def handle_serial_message(db: AsyncSession, incident: Incident, message: s
     elif incident.state == "start":
         valid_output, error_msg = parse_start(message)
     elif incident.state == "facility_name":
-        valid_output, error_msg = parse_facility_name(message)
-        if valid_output:
-            incident.incident_address = loc_to_adr[valid_output]
+        valid_output, error_msg = parse_facility_name(message, incident)
         
     elif "phone" in incident.state:
         # Standard sequential data extraction
@@ -189,10 +186,12 @@ https://{ROOT_URL}/incident/{incident_id}/review"""
     await db.commit()
     return next_question
 
-def parse_facility_name(message: str) -> tuple[str | None, str | None]:
+async def parse_facility_name(message: str, incident) -> tuple[str | None, str | None]:
+    loc_to_id, loc_to_adr = await crud.fetch_regions_to_locations_from_db(get_db())
     facility_scores = [(_name_score(message, facility), facility) for facility in loc_to_adr]
     best = sorted(facility_scores, reverse=True, key=lambda x: x[0])[0]
     if best[0] >= MATCH:
+        incident.incident_address = loc_to_adr[best[1]]
         return best[1], None
     return None, "Please correct the incident name."
     
