@@ -20,9 +20,10 @@ async def create_lifeguard(db: AsyncSession, lifeguard: portal_schemas.Lifeguard
     return new_lg
 
 async def create_manager(db: AsyncSession, mg: portal_schemas.ManagerPayload):
+    print("Adding manager...")
     regions = (
         await db.execute(
-            select(portal_schemas.Region).where(portal_schemas.Region.slug.in_(mg.region_slugs))
+            select(portal.Region).where(portal.Region.slug.in_(mg.region_slugs))
         )
     ).scalars().all()
     
@@ -31,7 +32,8 @@ async def create_manager(db: AsyncSession, mg: portal_schemas.ManagerPayload):
         raise HTTPException(status_code=404, detail=f'Unknown regions: {missing}')
     
     new_manager = portal.Manager(name=mg.name, email=mg.email)
-    new_manager.regions.update(regions)
+    for rg in regions:
+        new_manager.regions.append(rg)
 
     db.add(new_manager)
     await db.commit()
@@ -42,7 +44,7 @@ async def create_region(db: AsyncSession, rg: portal_schemas.RegionPayload):
     if rg.managers:
         managers = (
             await db.execute(
-                select(portal_schemas.Region).where(portal_schemas.Region.managers.in_(rg.managers))
+                select(portal.Region).where(portal.Region.managers.name.in_(rg.managers))
             )
         )
 

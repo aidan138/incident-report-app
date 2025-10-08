@@ -19,7 +19,7 @@ class Manager(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
     email: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     regions: Mapped[list['Region']] = relationship(
-        secondary=manager_region, back_populates='managers', lazy='selectin', collection_class=set
+        secondary=manager_region, back_populates='managers', lazy='selectin'
     )
 
 class Region(Base):
