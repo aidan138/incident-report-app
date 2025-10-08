@@ -5,6 +5,7 @@ from sqlalchemy.future import select
 from ..models import portal, incidents
 from ..schemas import portal_schemas
 from fastapi import HTTPException
+from typing import Any
 
 
 async def get_lifeguard_by_phone(db: AsyncSession, phone: str) -> Optional[portal.Lifeguard]:
@@ -75,8 +76,6 @@ async def update_region_location(db: AsyncSession, rg: portal.Region, locations:
     await db.commit()
     await db.refresh(rg)
     return rg
-    
-
 
 async def get_manager_by_email(db: AsyncSession, email: str):
     q = await db.execute(select(portal.Manager).where(portal.Manager.email == email))
@@ -125,3 +124,15 @@ async def update_incident_fields(db: AsyncSession, incident_pk: int, fields_to_v
     await db.commit()
     return result.rowcount
 
+def fetch_regions_to_locations_from_db(db: AsyncSession) -> tuple[dict[str, dict]]:
+    """Fetches all regions from the database and returns a dict that maps pk's to locations.
+
+    Args:
+        db (AsyncSession): The reference to the database.
+
+    Returns:
+        tuple[dict[str, dict]]: A dictionary mapping location names 
+    """
+    stmt = select(portal.Region)
+    regions = db.scalars(stmt).all()
+    return {location: region.pk for region in regions for location in region.locations}, {location for region in regions for location in region.locations}
